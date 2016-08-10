@@ -29,6 +29,10 @@ class User(db.Model):
         return "<User user_id=%s username=%s>" % (self.user_id,
                                                   self.username)
 
+    #Define relationship boxes table
+    boxes = db.relationship("Box",
+                            backref=db.backref("users"))
+
 
 class Recipe(db.Model):
     """Recipe on website."""
@@ -36,23 +40,46 @@ class Recipe(db.Model):
     __tablename__ = "recipes"
 
     rec_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    rec_name = db.Column(db.String(100), nullable=False)
-    cook_time = db.Column(db.Integer, nullable=False)
-    instructions = db.Column(db.Text, nullable=False)
-    src_url = db.Column(db.String(200), nullable=False)
-    img_url = db.Column(db.String(200), nullable=False)
-    serv_id = db.Column(db.Integer,
-                        db.ForeignKey('servings.serv_id'))
+    rec_name = db.Column(db.String(200), nullable=False)
+    time_in_min = db.Column(db.Integer, nullable=False)
+    src_url = db.Column(db.String(300), nullable=False)
+    img_url = db.Column(db.String(300), nullable=False)
+    author = db.Column(db.String(200), nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<Recipe rec_id=%s rec_name=%s>" % (self.rec_id,
-                                                   self.rec_name)
+        return "<Recipe rec_id=%s rec_name=%s author=%s>" % (self.rec_id,
+                                                             self.rec_name,
+                                                             self.author)
+
+    #Define relationship boxes table
+    boxes = db.relationship("Box",
+                            secondary="recboxes",
+                            backref=db.backref("recipes"))
+
+    #Define relationship ingredients table
+    ingredients = db.relationship("Ingredient",
+                                  secondary="recings",
+                                  backref=db.backref("recipes"))
+
+    #Define relationship instructions table
+    instructions = db.relationship("Instruction",
+                                   backref=db.backref("recipes"))
+
+    #Define relationship servings table
+    servings = db.relationship("Serving",
+                               secondary="recservs",
+                               backref=db.backref("recipes"))
+
+    #Define relationship courses table
+    courses = db.relationship("Course",
+                              secondary="reccourses",
+                              backref=db.backref("recipes"))
 
 
 class Box(db.Model):
-    """User's  Recipe Box."""
+    """User-Labeled Recipe Box."""
 
     __tablename__ = "boxes"
 
@@ -89,7 +116,7 @@ class Ingredient(db.Model):
     __tablename__ = "ingredients"
 
     ingred_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    ingred_name = db.Column(db.String(64), nullable=False)
+    ingred_name = db.Column(db.String(200), nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
@@ -99,7 +126,7 @@ class Ingredient(db.Model):
 
 
 class Measurement(db.Model):
-    """Measurement in recipes."""
+    """Measurement in for ingredients in recipes."""
 
     __tablename__ = "measurements"
 
@@ -114,6 +141,30 @@ class Measurement(db.Model):
                                                             self.unit,
                                                             self.amount)
 
+    #Define relationship ingredients table
+    ingredients = db.relationship("Ingredient",
+                                  secondary="ingmeasures",
+                                  backref=db.backref("measurements"))
+
+
+class Instruction(db.Model):
+    """Instruction for recipes."""
+
+    __tablename__ = "instructions"
+
+    inst_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    rec_id = db.Column(db.Integer,
+                       db.ForeignKey('recipes.rec_id'))
+    order = db.Column(db.Integer, nullable=False)
+    inst_steps = db.Column(db.Text, nullable=False)
+
+    def __repr__(self):
+        """Provide helpful representation when printed."""
+
+        return "<Instruction inst_id=%s rec_id=%s order_no=%s>" % (self.inst_id,
+                                                                   self.rec_id,
+                                                                   self.order)
+
 
 class Course(db.Model):
     """Course category for recipes."""
@@ -121,7 +172,7 @@ class Course(db.Model):
     __tablename__ = "courses"
 
     course_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    course_name = db.Column(db.String(64), nullable=False)
+    course_name = db.Column(db.String(100), nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
@@ -130,25 +181,10 @@ class Course(db.Model):
                                                          self.course_name)
 
 
-class Cuisine(db.Model):
-    """Cuisine category for recipes."""
-
-    __tablename__ = "cuisines"
-
-    cuisine_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    cuisine_name = db.Column(db.String(64), nullable=False)
-
-    def __repr__(self):
-        """Provide helpful representation when printed."""
-
-        return "<Cuisine cuis_id=%s cuis_name=%s>" % (self.cuisine_id,
-                                                      self.cuisine_name)
-
-
 class RecipeBox(db.Model):
     """User's  Recipe Box."""
 
-    __tablename__ = "recipeboxes"
+    __tablename__ = "recboxes"
 
     recbox_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     rec_id = db.Column(db.Integer,
@@ -164,11 +200,11 @@ class RecipeBox(db.Model):
 
 
 class RecipeIngred(db.Model):
-    """Recipe Ingredient."""
+    """Connects Recipe with Ingredient."""
 
-    __tablename__ = "recipeingreds"
+    __tablename__ = "recings"
 
-    recingred_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    recing_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     rec_id = db.Column(db.Integer,
                        db.ForeignKey('recipes.rec_id'))
     ingred_id = db.Column(db.Integer,
@@ -181,10 +217,28 @@ class RecipeIngred(db.Model):
                                                        self.ingred_id)
 
 
+class RecipeServing(db.Model):
+    """Connects Recipe with Serving."""
+
+    __tablename__ = "recservs"
+
+    recserv_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    rec_id = db.Column(db.Integer,
+                       db.ForeignKey('recipes.rec_id'))
+    serv_id = db.Column(db.Integer,
+                        db.ForeignKey('servings.serv_id'))
+
+    def __repr__(self):
+        """Provide helpful representation when printed."""
+
+        return "<RecipeServ rec_id=%s serv_id=%s>" % (self.rec_id,
+                                                      self.serv_id)
+
+
 class IngredMeasure(db.Model):
     """Ingredient Measurement."""
 
-    __tablename__ = "ingredmeasures"
+    __tablename__ = "ingmeasures"
 
     ingmeasure_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     ingred_id = db.Column(db.Integer,
@@ -202,7 +256,7 @@ class IngredMeasure(db.Model):
 class RecipeCourse(db.Model):
     """Recipe Course."""
 
-    __tablename__ = "recipecourses"
+    __tablename__ = "reccourses"
 
     reccourse_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     rec_id = db.Column(db.Integer,
@@ -217,27 +271,9 @@ class RecipeCourse(db.Model):
                                                           self.course_id)
 
 
-class RecipeCuisine(db.Model):
-    """Recipe Cuisine."""
-
-    __tablename__ = "recipecuisines"
-
-    reccuisine_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    rec_id = db.Column(db.Integer,
-                       db.ForeignKey('recipes.rec_id'))
-    cuisine_id = db.Column(db.Integer,
-                           db.ForeignKey('cuisines.cuisine_id'))
-
-    def __repr__(self):
-        """Provide helpful representation when printed."""
-
-        return "<RecCuisine rec_id=%s cuisine_id=%s>" % (self.rec_id,
-                                                         self.cuisine_id)
-
 
 ##############################################################################
 # Helper functions
-
 def connect_to_db(app):
     """Connect the database to our Flask app."""
 
