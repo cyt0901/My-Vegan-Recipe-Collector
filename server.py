@@ -4,11 +4,11 @@
 from jinja2 import StrictUndefined
 
 # from flask import Flask, render_template, redirect, request, flash, session
-from flask import Flask, render_template, redirect, flash, session
+from flask import Flask, render_template, redirect, flash, session, request
 from flask_debugtoolbar import DebugToolbarExtension
 
-# from model import connect_to_db, db
-from model import *
+from model import connect_to_db, db
+from model import Recipe, Serving, Course, Website, Measurement, Ingredient, Instruction, RecipeIngredient, IngredientMeasure, RecipeServing, RecipeCourse, User
 
 import json
 
@@ -30,7 +30,7 @@ def index():
     return render_template("home.html")
 
 
-@app.route('/register-form')
+@app.route('/register')
 def register_form():
     """Show registration form."""
 
@@ -42,22 +42,24 @@ def register_process():
     """Handle registration form."""
 
     # Get form variables
-    username = request.form["username"]
-    password = request.form["password"]
+    username = request.form.get("username")
+    password = request.form.get("password")
 
-    if User.query.filter_by(username=username).one():
+    # Check database to see if username is available for use
+    if User.query.filter_by(username=username).all():
         flash("Unavailable username")
-        return redirect('/registration')
+        return redirect("/register")
 
+    # Add new user to database
     new_user = User(username=username, password=password)
-
     db.session.add(new_user)
+
     db.session.commit()
 
-    return redirect('/login')
+    return redirect("/login")
 
 
-@app.route('/login-form')
+@app.route('/login')
 def login_form():
     """Show login form."""
 
@@ -69,26 +71,25 @@ def login_process():
     """Login the user."""
 
     # Get form variables
-    username = request.form["username"]
-    password = request.form["password"]
+    username = request.form.get("username")
+    password = request.form.get("password")
 
-    user = User.query.filter_by(username=username).one()
+    user = User.query.filter_by(username=username).first()
 
     # Query database to see if username exists
     if not user:
         flash("No such user")
-        return redirect("/login-form")
+        return redirect("/login")
 
     # Query database to see if password is correct
     if user.password != password:
         flash("Incorrect password")
-        return redirect("/login-form")
+        return redirect("/login")
 
     # Add user to the session to be logged in
     session["user_id"] = user.user_id
-
     flash("Logged in.")
-    return redirect('/profile')
+    return redirect("/profile")
 
 
 @app.route('/logout')
@@ -98,6 +99,7 @@ def logout():
     # Remove user from the session to be logged out
     del session["user_id"]
     flash("Logged Out.")
+
     return redirect("/")
 
 
