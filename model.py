@@ -19,8 +19,10 @@ class User(db.Model):
 
     __tablename__ = "users"
 
-    user_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    username = db.Column(db.String(64), nullable=False)
+    user_id = db.Column(db.Integer,
+                        autoincrement=True,
+                        primary_key=True)
+    username = db.Column(db.String(64), unique=True, nullable=False)
     password = db.Column(db.String(64), nullable=False)
 
     def __repr__(self):
@@ -39,28 +41,31 @@ class Recipe(db.Model):
 
     __tablename__ = "recipes"
 
-    rec_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    rec_name = db.Column(db.String(200), nullable=False)
+    recipe_id = db.Column(db.Integer,
+                          autoincrement=True,
+                          primary_key=True)
+    recipe_api_id = db.Column(db.Integer, nullable=True)
+    recipe_name = db.Column(db.String(200), nullable=False)
     time_in_min = db.Column(db.Integer, nullable=False)
     src_url = db.Column(db.String(300), nullable=False)
     img_url = db.Column(db.String(300), nullable=False)
-    author = db.Column(db.String(200), nullable=False)
+    site_id = db.Column(db.Integer,
+                        db.ForeignKey('websites.site_id'))
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<Recipe rec_id=%s rec_name=%s author=%s>" % (self.rec_id,
-                                                             self.rec_name,
-                                                             self.author)
+        return "<Recipe recipe_id=%s recipe_name=%s>" % (self.recipe_id,
+                                                         self.recipe_name)
 
     #Define relationship boxes table
     boxes = db.relationship("Box",
-                            secondary="recboxes",
+                            secondary="recipesboxes",
                             backref=db.backref("recipes"))
 
     #Define relationship ingredients table
     ingredients = db.relationship("Ingredient",
-                                  secondary="recings",
+                                  secondary="recipesingredients",
                                   backref=db.backref("recipes"))
 
     #Define relationship instructions table
@@ -69,13 +74,28 @@ class Recipe(db.Model):
 
     #Define relationship servings table
     servings = db.relationship("Serving",
-                               secondary="recservs",
+                               secondary="recipesservings",
                                backref=db.backref("recipes"))
 
     #Define relationship courses table
     courses = db.relationship("Course",
-                              secondary="reccourses",
+                              secondary="recipescourses",
                               backref=db.backref("recipes"))
+
+    #Define relationship websites table
+    websites = db.relationship("Website",
+                               backref=db.backref("recipes"))
+
+
+class Website(db.Model):
+    """Website where recipes scraped from."""
+
+    __tablename__ = "websites"
+
+    site_id = db.Column(db.Integer,
+                        autoincrement=True,
+                        primary_key=True)
+    site_name = db.Column(db.String(200), unique=True, nullable=False)
 
 
 class Box(db.Model):
@@ -83,7 +103,9 @@ class Box(db.Model):
 
     __tablename__ = "boxes"
 
-    box_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    box_id = db.Column(db.Integer,
+                       autoincrement=True,
+                       primary_key=True)
     user_id = db.Column(db.Integer,
                         db.ForeignKey('users.user_id'))
     label_name = db.Column(db.String(64), nullable=False)
@@ -100,14 +122,16 @@ class Serving(db.Model):
 
     __tablename__ = "servings"
 
-    serv_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    size = db.Column(db.Integer, nullable=False)
+    serving_id = db.Column(db.Integer,
+                           autoincrement=True,
+                           primary_key=True)
+    serving_size = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<Serving serv_id=%s size=%s>" % (self.serv_id,
-                                                 self.size)
+        return "<Serving serving_id=%s serving_size=%s>" % (self.serving_id,
+                                                            self.serving_size)
 
 
 class Ingredient(db.Model):
@@ -115,14 +139,17 @@ class Ingredient(db.Model):
 
     __tablename__ = "ingredients"
 
-    ingred_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    ingred_name = db.Column(db.String(200), nullable=False)
+    ingredient_id = db.Column(db.Integer,
+                              autoincrement=True,
+                              primary_key=True)
+    ingredient_name = db.Column(db.Text, unique=True, nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<Ingredient ingr_id=%s ingr_name=%s>" % (self.ingred_id,
-                                                         self.ingred_name)
+        return "<Ingredient ingredient_id=%s ingredient_name=%s>" % (
+                                                        self.ingredient_id,
+                                                        self.ingredient_name)
 
 
 class Measurement(db.Model):
@@ -130,20 +157,23 @@ class Measurement(db.Model):
 
     __tablename__ = "measurements"
 
-    measure_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    unit = db.Column(db.String(64), nullable=False)
-    amount = db.Column(db.String(64), nullable=False)
+    measure_id = db.Column(db.Integer,
+                           autoincrement=True,
+                           primary_key=True)
+    unit_of_measure = db.Column(db.String(64), nullable=False)
+    amount = db.Column(db.Numeric(6, 2), nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<Measurement meas_id=%s unit=%s amt=%s>" % (self.measure_id,
-                                                            self.unit,
-                                                            self.amount)
+        return "<Measurement measure_id=%s unit_of_measure=%s amt=%s>" % (
+                                                        self.measure_id,
+                                                        self.unit_of_measure,
+                                                        self.amount)
 
     #Define relationship ingredients table
     ingredients = db.relationship("Ingredient",
-                                  secondary="ingmeasures",
+                                  secondary="ingredientsmeasures",
                                   backref=db.backref("measurements"))
 
 
@@ -152,18 +182,21 @@ class Instruction(db.Model):
 
     __tablename__ = "instructions"
 
-    inst_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    rec_id = db.Column(db.Integer,
-                       db.ForeignKey('recipes.rec_id'))
-    order = db.Column(db.Integer, nullable=False)
-    inst_steps = db.Column(db.Text, nullable=False)
+    instruction_id = db.Column(db.Integer,
+                               autoincrement=True,
+                               primary_key=True)
+    recipe_id = db.Column(db.Integer,
+                          db.ForeignKey('recipes.recipe_id'))
+    step_order = db.Column(db.Integer, nullable=False)
+    step_instruction = db.Column(db.Text, nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<Instruction inst_id=%s rec_id=%s order_no=%s>" % (self.inst_id,
-                                                                   self.rec_id,
-                                                                   self.order)
+        return "<Instruction instruction_id=%s recipe_id=%s step_order=%s>" % (
+                                                        self.instruction_id,
+                                                        self.recipe_id,
+                                                        self.step_order)
 
 
 class Course(db.Model):
@@ -171,7 +204,9 @@ class Course(db.Model):
 
     __tablename__ = "courses"
 
-    course_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    course_id = db.Column(db.Integer,
+                          autoincrement=True,
+                          primary_key=True)
     course_name = db.Column(db.String(100), nullable=False)
 
     def __repr__(self):
@@ -184,92 +219,105 @@ class Course(db.Model):
 class RecipeBox(db.Model):
     """User's  Recipe Box."""
 
-    __tablename__ = "recboxes"
+    __tablename__ = "recipesboxes"
 
-    recbox_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    rec_id = db.Column(db.Integer,
-                       db.ForeignKey('recipes.rec_id'))
+    recipebox_id = db.Column(db.Integer,
+                             autoincrement=True,
+                             primary_key=True)
+    recipe_id = db.Column(db.Integer,
+                          db.ForeignKey('recipes.recipe_id'))
     box_id = db.Column(db.Integer,
                        db.ForeignKey('boxes.box_id'))
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<RecBox rec_id=%s box_id=%s>" % (self.rec_id,
-                                                 self.box_id)
+        return "<RecipeBox recipe_id=%s box_id=%s>" % (self.recipe_id,
+                                                       self.box_id)
 
 
-class RecipeIngred(db.Model):
+class RecipeIngredient(db.Model):
     """Connects Recipe with Ingredient."""
 
-    __tablename__ = "recings"
+    __tablename__ = "recipesingredients"
 
-    recing_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    rec_id = db.Column(db.Integer,
-                       db.ForeignKey('recipes.rec_id'))
-    ingred_id = db.Column(db.Integer,
-                          db.ForeignKey('ingredients.ingred_id'))
+    recipeingredient_id = db.Column(db.Integer,
+                                    autoincrement=True,
+                                    primary_key=True)
+    recipe_id = db.Column(db.Integer,
+                          db.ForeignKey('recipes.recipe_id'))
+    ingredient_id = db.Column(db.Integer,
+                              db.ForeignKey('ingredients.ingredient_id'))
+
+    original_string = db.Column(db.String(200), nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<RecIngred rec_id=%s ingred_id=%s>" % (self.rec_id,
-                                                       self.ingred_id)
+        return "<RecipeIngredient recipe_id=%s ingredient_id=%s>" % (
+                                                            self.recipe_id,
+                                                            self.ingredient_id)
 
 
 class RecipeServing(db.Model):
     """Connects Recipe with Serving."""
 
-    __tablename__ = "recservs"
+    __tablename__ = "recipesservings"
 
-    recserv_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    rec_id = db.Column(db.Integer,
-                       db.ForeignKey('recipes.rec_id'))
-    serv_id = db.Column(db.Integer,
-                        db.ForeignKey('servings.serv_id'))
+    recipeserving_id = db.Column(db.Integer,
+                                 autoincrement=True,
+                                 primary_key=True)
+    recipe_id = db.Column(db.Integer,
+                          db.ForeignKey('recipes.recipe_id'))
+    serving_id = db.Column(db.Integer,
+                           db.ForeignKey('servings.serving_id'))
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<RecipeServ rec_id=%s serv_id=%s>" % (self.rec_id,
-                                                      self.serv_id)
+        return "<RecipeServing recipe_id=%s serving_id=%s>" % (self.recipe_id,
+                                                               self.serving_id)
 
 
-class IngredMeasure(db.Model):
+class IngredientMeasure(db.Model):
     """Ingredient Measurement."""
 
-    __tablename__ = "ingmeasures"
+    __tablename__ = "ingredientsmeasures"
 
-    ingmeasure_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    ingred_id = db.Column(db.Integer,
-                          db.ForeignKey('ingredients.ingred_id'))
+    ingredientmeasure_id = db.Column(db.Integer,
+                                     autoincrement=True,
+                                     primary_key=True)
+    ingredient_id = db.Column(db.Integer,
+                              db.ForeignKey('ingredients.ingredient_id'))
     measure_id = db.Column(db.Integer,
                            db.ForeignKey('measurements.measure_id'))
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<IngredMeasure ingred_id=%s measure_id=%s>" % (self.ingred_id,
-                                                               self.measure_id)
+        return "<IngredMeasure ingred_id=%s measure_id=%s>" % (
+                                                            self.ingredient_id,
+                                                            self.measure_id)
 
 
 class RecipeCourse(db.Model):
     """Recipe Course."""
 
-    __tablename__ = "reccourses"
+    __tablename__ = "recipescourses"
 
-    reccourse_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    rec_id = db.Column(db.Integer,
-                       db.ForeignKey('recipes.rec_id'))
+    recipecourse_id = db.Column(db.Integer,
+                                autoincrement=True,
+                                primary_key=True)
+    recipe_id = db.Column(db.Integer,
+                          db.ForeignKey('recipes.recipe_id'))
     course_id = db.Column(db.Integer,
                           db.ForeignKey('courses.course_id'))
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<RecipeCourse rec_id=%s course_id=%s>" % (self.rec_id,
-                                                          self.course_id)
-
+        return "<RecipeCourse recipe_id=%s course_id=%s>" % (self.recipe_id,
+                                                             self.course_id)
 
 
 ##############################################################################
@@ -279,7 +327,8 @@ def connect_to_db(app):
 
     # Configure to use our PostgreSQL database
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///recipes'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testrecipes'
+    # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testrecipes'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testing'
     db.app = app
     db.init_app(app)
 
