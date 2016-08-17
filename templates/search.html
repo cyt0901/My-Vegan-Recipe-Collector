@@ -3,9 +3,27 @@
 {% block content %}
 
 <h1>Search</h1>
-
-<form action="/results" id="search-form" method="POST">
-    <label>Search: <input type="text" name="search"><br><br></label>
+<!-- filtered searches -->
+<form action="/results" id="search-form">
+    <label><span name="heading">Include Ingredients</span></label><br>
+    {% for t in all_types %}
+        <ul>{{ t.type_name }}
+            {% for ingredient in t.ingredients %}
+                <label><input type="checkbox" name="ingredient" value="{{ ingredient.ingredient_name }}"> {{ ingredient.ingredient_name }} </label>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+    <label><span name="heading">Include Courses</span></label><br>
+    {% for course in all_courses %}
+        <label><input type="checkbox" name="course" value="{{ course.course_name }}"> {{ course.course_name }} </label>
+    {% endfor %}
+    <br><br>
+    <label> Maximum Time: <input type="number" name="time" min="1" max="1500"></label>
+    <br><br>
+    <label><input type="radio" name="search-term" value="any"> Any Terms </label>
+    <label><input type="radio" name="search-term" value="all"> All Terms </label>
+    <br><br>
+    <label><input type="reset" value="Reset"></label>
     <label><input type="submit" value="Search"></label>
 </form>
 

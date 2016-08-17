@@ -1,6 +1,6 @@
 """Utility file to seed database with data from api and through webscraping"""
 
-from model import Recipe, Serving, Course, Website, Measurement, Ingredient, Instruction, RecipeIngredient, IngredientMeasure, RecipeServing, RecipeCourse, User
+from model import Recipe, Serving, Course, Website, Measurement, Ingredient, Instruction, RecipeIngredient, IngredientMeasure, RecipeServing, RecipeCourse, User, IngredientType
 from model import connect_to_db, db
 from server import app
 from webscrape_details import get_all_recipe_info
@@ -69,6 +69,24 @@ def load_servings(api_info):
     db.session.commit()
 
 
+def load_ingredienttypes(api_info):
+    """Load ingredient types for the recipe."""
+
+    print "Ingredient Type(s)"
+
+    all_ingredients = api_info['extendedIngredients']  # list of ingredients
+
+    for ingredient in all_ingredients:
+        type_name = ingredient['aisle']
+
+        if not IngredientType.query.filter_by(type_name=type_name).all():
+            ingredienttype = IngredientType(type_name=type_name)
+
+            db.session.add(ingredienttype)
+
+    db.session.commit()
+
+
 def load_ingredients(api_info):
     """Load ingredients for the recipe."""
 
@@ -78,9 +96,11 @@ def load_ingredients(api_info):
 
     for ingredient in all_ingredients:
         ingredient_name = ingredient['name']
+        type_name = ingredient['aisle']
 
         if not Ingredient.query.filter_by(ingredient_name=ingredient_name).all():
-            ingredient = Ingredient(ingredient_name=ingredient_name)
+            type_id = IngredientType.query.filter_by(type_name=type_name).first().type_id
+            ingredient = Ingredient(ingredient_name=ingredient_name, type_id=type_id)
 
             db.session.add(ingredient)
 
@@ -244,7 +264,8 @@ if __name__ == "__main__":
             "http://minimalistbaker.com/cauliflower-rice-stuffed-peppers/",
             "http://minimalistbaker.com/banana-split-smoothie/",
             "http://minimalistbaker.com/strawberry-rhubarb-crumble-bars-gf/",
-            "http://minimalistbaker.com/no-bake-almond-butter-cup-bars/"]
+            "http://minimalistbaker.com/no-bake-almond-butter-cup-bars/",
+            "http://minimalistbaker.com/asian-quinoa-salad/"]
 
     for url in urls:
 
@@ -276,6 +297,7 @@ if __name__ == "__main__":
         load_website(scrape_info)
         load_courses(scrape_info)
         load_servings(api_info)
+        load_ingredienttypes(api_info)
         load_ingredients(api_info)
         load_measurements(api_info)
         load_recipes(api_info, scrape_info)

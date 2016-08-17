@@ -7,8 +7,10 @@ from jinja2 import StrictUndefined
 from flask import Flask, render_template, redirect, flash, session, request
 from flask_debugtoolbar import DebugToolbarExtension
 
+# from sqlalchemy import func, distinct
+
 from model import connect_to_db, db
-from model import Recipe, Serving, Course, Website, Measurement, Ingredient, Instruction, RecipeIngredient, IngredientMeasure, RecipeServing, RecipeCourse, User
+from model import Recipe, Serving, Course, Website, Measurement, Ingredient, Instruction, RecipeIngredient, IngredientMeasure, RecipeServing, RecipeCourse, User, IngredientType
 
 import json
 
@@ -114,26 +116,94 @@ def show_profile():
 def show_search_form():
     """Show search form."""
 
-    recipe_preview_info = json.loads(open("data/search.json"))
-    print type(recipe_preview_info)
+    all_courses = Course.query.all()
+    all_types = IngredientType.query.order_by(IngredientType.type_name).all()
 
-    print recipe_preview_info
+    return render_template("search.html",
+                           all_types=all_types,
+                           all_courses=all_courses)
 
-    return render_template("search.html")
 
-
-@app.route('/results', methods=["POST"])
+@app.route('/results')
 def show_search_results():
     """Display the search results."""
 
-    return render_template("results.html")
+    all_ingredients = request.args.getlist("ingredient")
+    all_courses = request.args.getlist("course")
+    max_time = request.args.get("time")
+    search_term = request.args.get("search-term")
+
+    search_parameters = filter(None, all_ingredients + all_courses + [max_time] + [search_term])
+
+    recipe_count = {}
+    # MATCH INGREDIENTS
+    if all_ingredients:
+        find_ingredients = Ingredient.query.filter(Ingredient.ingredient_name.in_(all_ingredients)).all()
+
+        for ingredient in find_ingredients:
+            # for ANY ingredients
+            find_recipes = ingredient.recipes
+            # create a counter with a dictionary
+            for recipe in find_recipes:
+                recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
+
+        # for ALL ingredients
+        if search_term == "all":
+            for item, count in recipe_count.items():
+                # if the count does not match the length of the ingredients chosen, remove that key/value pair from the dictionary
+                if count != len(all_ingredients):
+                    del recipe_count[item]
+
+        # list of all recipe objects for ANY or ALL ingredients
+        find_recipes = recipe_count.keys()
+
+    # MATCH COURSES
+    if all_courses:
+        find_courses = Course.query.filter(Course.course_name.in_(all_courses)).all()
+
+        course_count = {}
+
+        for course in find_courses:
+            find_courses = course.recipes
+            for recipe in find_courses:
+                if recipe_count.get(recipe):
+                    course_count[recipe] = course_count.get(recipe, 0) + 1
+
+        # for ALL courses
+        if search_term == "all":
+            for item, count in course_count.items():
+                if count != len(all_courses):
+                    del course_count[item]
+
+            find_recipes = course_count.keys()
+
+        # for ANY courses
+        else:
+            for item, count in course_count.items():
+                recipe_count[item] = recipe_count.get(item, 0) + 1
+            find_recipes = recipe_count.keys()
+
+    # MATCH TIME
+    if max_time:
+        find_time = Recipe.query.filter(Recipe.time_in_min < max_time).all()
+
+        for recipe in find_time:
+            recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
+
+        find_recipes = recipe_count.keys()
+
+    return render_template("results.html",
+                           find_recipes=find_recipes,
+                           search_parameters=search_parameters)
 
 
 @app.route('/recipe/<int:recipe_id>')
 def show_recipe(recipe_id):
     """Show detailed recipe page."""
 
-    return render_template("recipe.html")
+    recipe = Recipe.query.get(recipe_id)
+
+    return render_template("recipe.html", recipe=recipe)
 
 
 @app.route('/save_recipe', methods=["POST"])
@@ -145,9 +215,7 @@ def add_recipe_to_box():
     return render_template("add_to_box.html")
 
 
-# @app.route('/')
-
-
+###############################################################################
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the
     # point that we invoke the DebugToolbarExtension

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title%}Recipe{% endblock %}
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12 col-md-5">
+            <img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive img-rounded">
+        </div>
+        <div class="col-xs-12 col-md-7">
+            <h1>{{ recipe.recipe_name }}</h1>
+            Source: <a href="{{ recipe.src_url }}">{{ recipe.websites.site_name }}</a><br>
+            Total Time: {{ recipe.time_in_min}} minutes<br>
+            Course(s): 
+            {% for course in recipe.courses %}
+                {{ course.course_name }}
+            {% endfor %}
+            <br><br><br>
+            Ingredients:<br>
+            {% for ingredient in recipe.recipesingredients %}
+                <li>{{ ingredient.original_string }}</li>
+            {% endfor %}
+        </div>
+    </div>
+    <br><br>
+    <div class="row">
+        <div class="col-xs-12 col-md-8 col-md-offset-2">
+            Instructions:<br><br>
+            <table class="table">
+                {% for instruction in recipe.instructions %}
+                    <tr>
+                        <td>{{ instruction.step_order}}</td>
+                        <td>{{ instruction.step_instruction}}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    <br><br><br><br>
+    <div class="row">
+        <div class="col-xs-6 col-xs-push-3 col-md-4 col-md-push-4">
+            <center><a href="/"><img src="/static/img/Vegan_clipart.png" alt="Home" class="img-responsive img-circle" width="200"></a></center>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+</div>
+
+{% endblock %}

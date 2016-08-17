@@ -68,6 +68,10 @@ class Recipe(db.Model):
                                   secondary="recipesingredients",
                                   backref=db.backref("recipes"))
 
+    #Define relationship recipesingredients table
+    recipesingredients = db.relationship("RecipeIngredient",
+                                         backref=db.backref("recipes"))
+
     #Define relationship instructions table
     instructions = db.relationship("Instruction",
                                    backref=db.backref("recipes"))
@@ -142,7 +146,11 @@ class Ingredient(db.Model):
     ingredient_id = db.Column(db.Integer,
                               autoincrement=True,
                               primary_key=True)
-    ingredient_name = db.Column(db.Text, unique=True, nullable=False)
+    ingredient_name = db.Column(db.Text,
+                                unique=True,
+                                nullable=False)
+    type_id = db.Column(db.Integer,
+                        db.ForeignKey('ingredienttypes.type_id'))
 
     def __repr__(self):
         """Provide helpful representation when printed."""
@@ -150,6 +158,10 @@ class Ingredient(db.Model):
         return "<Ingredient ingredient_id=%s ingredient_name=%s>" % (
                                                         self.ingredient_id,
                                                         self.ingredient_name)
+
+    #Define relationship websites table
+    ingredienttypes = db.relationship("IngredientType",
+                                      backref=db.backref("ingredients"))
 
 
 class Measurement(db.Model):
@@ -257,6 +269,25 @@ class RecipeIngredient(db.Model):
         return "<RecipeIngredient recipe_id=%s ingredient_id=%s>" % (
                                                             self.recipe_id,
                                                             self.ingredient_id)
+
+
+class IngredientType(db.Model):
+    """Type of Ingredient."""
+
+    __tablename__ = "ingredienttypes"
+
+    type_id = db.Column(db.Integer,
+                        autoincrement=True,
+                        primary_key=True)
+    type_name = db.Column(db.String(100),
+                          unique=True,
+                          nullable=False)
+
+    def __repr__(self):
+        """Provide helpful representation when printed."""
+
+        return "<IngredientType type_id=%s type_name=%s>" % (self.type_id,
+                                                             self.type_name)
 
 
 class RecipeServing(db.Model):
