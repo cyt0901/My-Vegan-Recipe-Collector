@@ -2,8 +2,50 @@
 {% block title%}Profile{% endblock %}
 {% block content %}
 
-<h1>Profile</h1>
+<div class="my-contents">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12">
+                <h1>Hi, {{ user.username }}</h1>
+                <h5><a id="logout" href="/logout">Logout</a></h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-md-4">
+                <img src="static/img/profile-placeholder.png" height="300">
+            </div>
+            <div class="col-xs-12 col-md-8">
+                <h4><a href="/my_recipes">My Recipes</a></h4><br>
+                {% for label, recipe in label_recipes.items() %}
+                    <h5>{{ label }}</h5>
+                    {% for r in recipe %}
+                        <a href="/recipe/{{ r.recipe_id }}"> {{ r.recipe_name }}</a><br>
+                    {% endfor %}
+                    <br><br>
+                {% endfor %}
+            </div>                     
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <h4>User Settings</h4>
+                <form action="/settings" id="settings" method="POST">
+                    <label> Change Username <br><input type="text" id="username" name="username"></label><br><br>
+                    <label> Change Password <br><input type="password" name="password"></label><br><br>
+                    <label><input type="submit" value="Update"></label>
+                </form>
+            </div>
+        </div>
+        <br> 
+        <div class="row">  
+                <div class="col-xs-12 col-md-6 col-lg-3">
 
-<h4><a href="/logout">Logout</a></h4>
+                </div>
+        </div>  
+    </div>
+</div>
+<script>
+
+
+</script>
 
 {% endblock %}

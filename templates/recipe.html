@@ -9,24 +9,44 @@
         </div>
         <div class="col-xs-12 col-md-7">
             <h1>{{ recipe.recipe_name }}</h1>
+            {% if session.get("user_id") %}
+                <h4>
+                    <form action="/save_recipe/{{ recipe.recipe_id }}">
+                        <input type="submit" value="Save Recipe">
+                    </form>
+                </h4>
+            {% endif %}
             Source: <a href="{{ recipe.src_url }}">{{ recipe.websites.site_name }}</a><br>
             Total Time: {{ recipe.time_in_min}} minutes<br>
             Course(s): 
             {% for course in recipe.courses %}
                 {{ course.course_name }}
-            {% endfor %}
+            {% endfor %}<br>
+            Serving Size:
+            <select id="serving">
+                <option id="serving-opt{{ recipe.servings[0].serving_size }}" selected>
+                    {{ recipe.servings[0].serving_size }}
+                </option>
+                {% for number in serving_range %}
+                    {% if number != recipe.servings[0].serving_size %}
+                        <option id="serving-opt{{ number }}">{{ number }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <button id="convert">Convert</button>
             <br><br><br>
-            Ingredients:<br>
+            <span id="ingredients">Ingredients:<br>
             {% for ingredient in recipe.recipesingredients %}
                 <li>{{ ingredient.original_string }}</li>
             {% endfor %}
+            </span>
         </div>
     </div>
     <br><br>
     <div class="row">
         <div class="col-xs-12 col-md-8 col-md-offset-2">
             Instructions:<br><br>
-            <table class="table">
+            <table class="table" id="instructions">
                 {% for instruction in recipe.instructions %}
                     <tr>
                         <td>{{ instruction.step_order}}</td>
@@ -42,15 +62,15 @@
             <center><a href="/"><img src="/static/img/Vegan_clipart.png" alt="Home" class="img-responsive img-circle" width="200"></a></center>
         </div>
     </div>
-
-
-
-
-
-
-
-
-
 </div>
+<script>
+    function makeCurrentSelection(evt) {
+        var serving_size = $('#serving').val();
+        console.log(serving_size)
+
+    }
+
+    $('#convert').on('click', makeCurrentSelection);
+</script>
 
 {% endblock %}

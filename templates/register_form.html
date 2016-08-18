@@ -2,12 +2,14 @@
 {% block title%}Register{% endblock %}
 {% block content %}
 
-<h1>Register</h1>
-
-<form action="/register" id="register-form" method="POST">
-    <label>Username: <input type="text" id="username" name="username"></label><br><br>
-    <label>Password: <input type="password" name="password"></label><br><br>
-    <label><input type="submit" value="Register"></label>
-</form>
-
+<div class="my-contents">
+    <h1>Register</h1>
+    <div class="forms">
+        <form action="/register" id="register-form" method="POST">
+            <label> Username <br><input type="text" id="username" name="username"></label><br><br>
+            <label> Password <br><input type="password" name="password"></label><br><br>
+            <label><input type="submit" value="Register"></label>
+        </form>
+    </div>
+</div>
 {% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title%}My Recipes{% endblock %}
+{% block content %}
+
+<div class="my-contents">
+    <h1>My Recipes</h1><br>
+    {% for label, recipe in label_recipes.items() %}
+        <h4>{{ label }}</h4>
+        {% for r in recipe %}
+            <ul><a href="/recipe/{{ r.recipe_id }}"><img src="{{ r.img_url }}" height="50"></a><a href="/recipe/{{ r.recipe_id }}"> {{ r.recipe_name }}</a></ul>
+        {% endfor %}
+        <br>
+    {% endfor %}
+</div>
+<script>
+
+
+</script>
+
+{% endblock %}

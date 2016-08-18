@@ -2,12 +2,16 @@
 {% block title%}Login{% endblock %}
 {% block content %}
 
-<h1>Login</h1>
-
-<form action="/login" id="login-form" method="POST">
-    <label>Username: <input type="text" id="username" name="username"></label><br><br>
-    <label>Password: <input type="password" name="password"></label><br><br>
-    <label><input type="submit" value="Login"></label>
-</form>
+<div class="my-contents">
+    <h1>Login</h1>
+    <p><a href="/register">Create a new account</a></p>
+    <div class="forms">
+        <form action="/login" id="login-form" method="POST">
+            <label> Username <br><input type="text" id="username" name="username"></label><br><br>
+            <label> Password <br><input type="password" name="password"></label><br><br>
+            <label><input type="submit" value="Login"></label>
+        </form>
+    </div>
+</div>
 
 {% endblock %}

@@ -7,10 +7,10 @@ from jinja2 import StrictUndefined
 from flask import Flask, render_template, redirect, flash, session, request
 from flask_debugtoolbar import DebugToolbarExtension
 
-# from sqlalchemy import func, distinct
+from sqlalchemy import update
 
 from model import connect_to_db, db
-from model import Recipe, Serving, Course, Website, Measurement, Ingredient, Instruction, RecipeIngredient, IngredientMeasure, RecipeServing, RecipeCourse, User, IngredientType
+from model import Recipe, Serving, Course, Website, Measurement, Ingredient, Instruction, RecipeIngredient, IngredientMeasure, RecipeServing, RecipeCourse, User, IngredientType, Box, RecipeBox
 
 import json
 
@@ -36,61 +36,82 @@ def index():
 def register_form():
     """Show registration form."""
 
-    return render_template("register_form.html")
+    if not session.get("user_id"):
+        return render_template("register_form.html")
+
+    # If a user is already logged in
+    flash("You are already logged in")
+    return redirect("/")
 
 
 @app.route('/register', methods=['POST'])
 def register_process():
     """Handle registration form."""
 
-    # Get form variables
-    username = request.form.get("username")
-    password = request.form.get("password")
+    if not session.get("user_id"):
+        # Get form variables
+        username = request.form.get("username")
+        password = request.form.get("password")
 
-    # Check database to see if username is available for use
-    if User.query.filter_by(username=username).all():
-        flash("Unavailable username")
-        return redirect("/register")
+        # Check database to see if username is available for use
+        if User.query.filter_by(username=username).all():
+            flash("Unavailable username")
+            return redirect("/register")
 
-    # Add new user to database
-    new_user = User(username=username, password=password)
-    db.session.add(new_user)
+        # Add new user to database
+        new_user = User(username=username, password=password)
+        db.session.add(new_user)
 
-    db.session.commit()
+        db.session.commit()
 
-    return redirect("/login")
+        return redirect("/login")
+
+    # If a user is already logged in
+    flash("You are already logged in")
+    return redirect("/")
 
 
 @app.route('/login')
 def login_form():
     """Show login form."""
 
-    return render_template("login_form.html")
+    if not session.get("user_id"):
+        return render_template("login_form.html")
+    else:
+        # If a user is already logged in
+        flash("You are already logged in")
+        return redirect("/")
 
 
 @app.route('/login', methods=['POST'])
 def login_process():
     """Login the user."""
 
-    # Get form variables
-    username = request.form.get("username")
-    password = request.form.get("password")
+    if not session.get("user_id"):
+        # Get form variables
+        username = request.form.get("username")
+        password = request.form.get("password")
 
-    user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username).first()
 
-    # Query database to see if username exists
-    if not user:
-        flash("No such user")
-        return redirect("/login")
+        # Query database to see if username exists
+        if not user:
+            flash("No such user exists")
+            return redirect("/login")
 
-    # Query database to see if password is correct
-    if user.password != password:
-        flash("Incorrect password")
-        return redirect("/login")
+        # Query database to see if password is correct
+        if user.password != password:
+            flash("Incorrect password")
+            return redirect("/login")
 
-    # Add user to the session to be logged in
-    session["user_id"] = user.user_id
-    flash("Logged in.")
+        # Add user to the session to be logged in
+        session["user_id"] = user.user_id
+        session["username"] = user.username
+
+        flash("Logged in")
+    else:
+        flash("You are already logged in")
+
     return redirect("/profile")
 
 
@@ -98,18 +119,33 @@ def login_process():
 def logout():
     """Log out the user."""
 
-    # Remove user from the session to be logged out
-    del session["user_id"]
-    flash("Logged Out.")
-
-    return redirect("/")
+    if session.get("user_id"):
+        # Remove user from the session to be logged out
+        session.pop("user_id", None)
+        session.pop("username", None)
+        flash("You are now logged out")
+        return redirect("/")
 
 
 @app.route('/profile')
 def show_profile():
     """Show user profile."""
 
-    return render_template("profile.html")
+    if session.get("user_id"):
+        user = User.query.filter_by(user_id=session["user_id"]).first()
+        boxes = Box.query.filter_by(user_id=session["user_id"]).all()
+
+        label_recipes = {}
+
+        for box in boxes:
+            label_name = box.label_name
+            label_recipes[label_name] = label_recipes.get(label_name, []) + box.recipes
+
+        return render_template("profile.html",
+                               user=user,
+                               label_recipes=label_recipes)
+    else:
+        return redirect("/")
 
 
 @app.route('/search')
@@ -133,9 +169,15 @@ def show_search_results():
     max_time = request.args.get("time")
     search_term = request.args.get("search-term")
 
-    search_parameters = filter(None, all_ingredients + all_courses + [max_time] + [search_term])
+    search_parameters = filter(None, [search_term] + all_ingredients + all_courses + ["< " + max_time + " min"])
+
+    # no other search values except for ANY or ALL search_term
+    if len(search_parameters) == 2 and not max_time:
+        find_recipes = Recipe.query.all()
+        search_parameters = search_parameters[:-1]
 
     recipe_count = {}
+
     # MATCH INGREDIENTS
     if all_ingredients:
         find_ingredients = Ingredient.query.filter(Ingredient.ingredient_name.in_(all_ingredients)).all()
@@ -202,17 +244,106 @@ def show_recipe(recipe_id):
     """Show detailed recipe page."""
 
     recipe = Recipe.query.get(recipe_id)
+    serving_range = range(1, 13)
 
-    return render_template("recipe.html", recipe=recipe)
+    return render_template("recipe.html",
+                           recipe=recipe,
+                           serving_range=serving_range)
+
+
+@app.route('/save_recipe/<int:recipe_id>')
+def show_add_recipe(recipe_id):
+    """Show form for user to save recipe to recipe box."""
+
+    if session.get("user_id"):
+        recipe = Recipe.query.filter_by(recipe_id=recipe_id).first()
+        user_id = session['user_id']
+        boxes = Box.query.filter_by(user_id=user_id).all()
+
+        return render_template("add_to_box.html",
+                               recipe=recipe,
+                               boxes=boxes)
 
 
 @app.route('/save_recipe', methods=["POST"])
-def add_recipe_to_box():
+def save_recipe_to_box():
     """Save the recipe to a user recipe box."""
 
-    # Add to database
+    if session.get("user_id"):
+        label_name = request.form.get("box_label")
+        new_label_name = request.form.get("new_label")
+        recipe_id = request.form.get("recipe-id")
+        user_id = session['user_id']
 
-    return render_template("add_to_box.html")
+        if label_name:
+            box = Box(user_id=user_id,
+                      label_name=label_name)
+        else:
+            box = Box(user_id=user_id,
+                      label_name=new_label_name)
+
+        db.session.add(box)
+        db.session.commit()
+
+        box_id = box.box_id
+        recipebox = RecipeBox(recipe_id=recipe_id,
+                              box_id=box_id)
+
+        db.session.add(recipebox)
+        db.session.commit()
+
+        return redirect("/my_recipes")
+
+
+@app.route('/my_recipes')
+def show_recipe_box():
+    """Show the user recipe box and labels"""
+
+    user_id = session['user_id']
+    boxes = Box.query.filter_by(user_id=user_id).all()
+
+    label_recipes = {}
+
+    for box in boxes:
+        label_name = box.label_name
+        label_recipes[label_name] = label_recipes.get(label_name, []) + box.recipes
+
+    return render_template("my_recipes.html",
+                           label_recipes=label_recipes)
+
+
+@app.route('/settings', methods=["POST"])
+def update_settings():
+    """Update database with new values from user."""
+
+    if session.get("user_id"):
+        # Get form variables
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        user_id = session["user_id"]
+
+        user = User.query.filter_by(user_id=user_id).first()
+
+        user.username = username
+        user.password = password
+
+        db.session.add(user)
+        db.session.commit()
+
+        flash("Your information has been updated")
+        return redirect("/profile")
+
+
+@app.route('/convert.json')
+def convert_serving():
+    """Return conversions of serving size."""
+
+    serving_size = request.args.get("serving_size")
+
+    # recipe = Recipe
+
+    return jsonify(conversions)
 
 
 ###############################################################################

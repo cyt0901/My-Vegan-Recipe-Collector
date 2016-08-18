@@ -173,7 +173,9 @@ class Measurement(db.Model):
                            autoincrement=True,
                            primary_key=True)
     unit_of_measure = db.Column(db.String(64), nullable=False)
-    amount = db.Column(db.Numeric(6, 2), nullable=False)
+    amount = db.Column(db.String(64), nullable=True)
+    metric_unit = db.Column(db.String(64), nullable=True)
+    metric_amount = db.Column(db.Numeric(6, 2), nullable=True)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
