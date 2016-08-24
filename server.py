@@ -10,9 +10,10 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy import update
 
 from model import connect_to_db, db
-from model import Recipe, Serving, Course, Website, Measurement, Ingredient, Instruction, RecipeIngredient, IngredientMeasure, RecipeServing, RecipeCourse, User, IngredientType, Box, RecipeBox
+from model import User, Recipe, Website, Serving, Ingredient, USMeasurement, MetricMeasurement, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
 
 import json
+
 
 
 app = Flask(__name__)
@@ -276,19 +277,17 @@ def save_recipe_to_box():
         user_id = session['user_id']
 
         if label_name:
-            box = Box(user_id=user_id,
-                      label_name=label_name)
+            box_id = Box.query.filter_by(user_id=user_id, label_name=label_name).first().box_id
         else:
             box = Box(user_id=user_id,
                       label_name=new_label_name)
+            db.session.add(box)
+            db.session.commit()
 
-        db.session.add(box)
-        db.session.commit()
+            box_id = Box.query.filter_by(user_id=user_id, label_name=new_label_name).first().box_id
 
-        box_id = box.box_id
         recipebox = RecipeBox(recipe_id=recipe_id,
                               box_id=box_id)
-
         db.session.add(recipebox)
         db.session.commit()
 
@@ -339,11 +338,90 @@ def update_settings():
 def convert_serving():
     """Return conversions of serving size."""
 
-    serving_size = request.args.get("serving_size")
+    new_serving = int(request.args.get("serving"))
+    recipe_name = request.args.get("recipe_name")
 
-    # recipe = Recipe
+    #query database for recipe
+    recipe = Recipe.query.filter_by(recipe_name=recipe_name).first()
+    orig_serving = recipe.servings[0].serving_size
 
-    return jsonify(conversions)
+    all_ings = recipe.recipesingredients
+    # calculate conversion values for each ingredient
+    for ingredient in recipe.recipesingredients:
+        print ingredient
+
+    print "\n\n\n"
+    print "new_serving......   ", new_serving
+    print "recipe_name.......   ", recipe_name
+    print "recipe......   ", recipe
+    print "orig_serving....   ", orig_serving
+    print "all_ings.....   ", all_ings
+    print "\n\n\n"
+
+
+@app.route('/test')
+def test_page():
+    """To test data"""
+
+    new_serving = int('6')
+
+    recipe = Recipe.query.filter_by(recipe_id=1).first()
+    orig_serving = recipe.servings[0].serving_size
+
+    for ing in recipe.recipesingredients:
+        print ing
+        print ing.usamounts
+        if ing.usamounts:
+            for amount in ing.usamounts:
+                print amount.us_amount
+
+
+
+    print "-" * 50
+    print "\n\n\n"
+    print "new_serving:::::: ", new_serving
+    print "recipe::::::  ", recipe
+    print "orig_serving::::::   ", orig_serving
+    print "\n\n\n"
+    print "-" * 50
+
+    return render_template("testpage.html",
+                           new_serving=new_serving,
+                           recipe=recipe,
+                           orig_serving=orig_serving)
+
+
+@app.route('/newtest')
+def new_testpage():
+
+    new_serving = int('6')
+    recipe = Recipe.query.filter_by(recipe_id=1).first()
+    orig_serving = recipe.servings[0].serving_size
+
+    calculation = float(new_serving) / float(orig_serving)
+
+    print "\n\n\n"
+
+    print new_serving, "/", orig_serving
+    print recipe
+    print len(recipe.recipesingredients)
+    for i in recipe.recipesingredients:
+        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        print i.ingredients.ingredient_name
+        for x in i.usamounts:
+            print x.us_amount
+            print x.us_decimal
+            print ">>>>>", float(x.us_decimal) * calculation
+            print "++++++++++++++++++"
+        for y in i.metricamounts:
+            print y.metric_amount
+            print ">>>>>>", float(y.metric_amount) * calculation
+
+    print calculation
+
+    print "Done-----------\n\n\n"
+
+
 
 
 ###############################################################################

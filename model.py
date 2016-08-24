@@ -101,6 +101,12 @@ class Website(db.Model):
                         primary_key=True)
     site_name = db.Column(db.String(200), unique=True, nullable=False)
 
+    def __repr__(self):
+        """Provide helpful representation when printed."""
+
+        return "<Website site_id=%s site_name=%s>" % (self.site_id,
+                                                      self.site_name)
+
 
 class Box(db.Model):
     """User-Labeled Recipe Box."""
@@ -159,36 +165,116 @@ class Ingredient(db.Model):
                                                         self.ingredient_id,
                                                         self.ingredient_name)
 
-    #Define relationship websites table
+    #Define relationship ingredienttypes table
     ingredienttypes = db.relationship("IngredientType",
                                       backref=db.backref("ingredients"))
 
+    #Define relationship recipesingredients table
+    recipesingredients = db.relationship("RecipeIngredient",
+                                         backref=db.backref("ingredients"))
 
-class Measurement(db.Model):
-    """Measurement in for ingredients in recipes."""
 
-    __tablename__ = "measurements"
+class USMeasurement(db.Model):
+    """US measurement for ingredients in recipes."""
 
-    measure_id = db.Column(db.Integer,
-                           autoincrement=True,
-                           primary_key=True)
-    unit_of_measure = db.Column(db.String(64), nullable=False)
-    amount = db.Column(db.String(64), nullable=True)
-    metric_unit = db.Column(db.String(64), nullable=True)
-    metric_amount = db.Column(db.Numeric(6, 2), nullable=True)
+    __tablename__ = "usmeasurements"
+
+    us_measure_id = db.Column(db.Integer,
+                              autoincrement=True,
+                              primary_key=True)
+    us_unit = db.Column(db.String(20),
+                        unique=True,
+                        nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<Measurement measure_id=%s unit_of_measure=%s amt=%s>" % (
-                                                        self.measure_id,
-                                                        self.unit_of_measure,
-                                                        self.amount)
+        return "<USMeasurement measure_id=%s us_unit=%s>" % (
+                                                        self.us_measure_id,
+                                                        self.us_unit)
 
     #Define relationship ingredients table
-    ingredients = db.relationship("Ingredient",
-                                  secondary="ingredientsmeasures",
-                                  backref=db.backref("measurements"))
+    recipesingredients = db.relationship("RecipeIngredient",
+                                  secondary="usingredientsmeasures",
+                                  backref=db.backref("usmeasurements"))
+
+
+class MetricMeasurement(db.Model):
+    """Metric measurement for ingredients in recipes."""
+
+    __tablename__ = "metricmeasurements"
+
+    metric_measure_id = db.Column(db.Integer,
+                                  autoincrement=True,
+                                  primary_key=True)
+    metric_unit = db.Column(db.String(20),
+                            unique=True,
+                            nullable=False)
+
+    def __repr__(self):
+        """Provide helpful representation when printed."""
+
+        return "<MetricMeasurement measure_id=%s metric_measure=%s>" % (
+                                                        self.metric_measure_id,
+                                                        self.metric_unit)
+
+    #Define relationship ingredients table
+    recipesingredients = db.relationship("RecipeIngredient",
+                                  secondary="metricingredientsmeasures",
+                                  backref=db.backref("metricmeasurements"))
+
+
+class USAmount(db.Model):
+    """Conversion for ingredients in recipes."""
+
+    __tablename__ = "usamounts"
+
+    us_amount_id = db.Column(db.Integer,
+                             autoincrement=True,
+                             primary_key=True)
+    us_amount = db.Column(db.String(64),
+                          unique=True,
+                          nullable=False)
+    us_decimal = db.Column(db.Numeric(7, 2),
+                           nullable=True)
+
+    def __repr__(self):
+        """Provide helpful representation when printed."""
+
+        return "<USAmount us_amount_id=%s amount=%s decimal=%s>" % (
+                                                        self.us_amount_id,
+                                                        self.us_amount,
+                                                        self.us_decimal)
+
+    #Define relationship ingredients table
+    recipesingredients = db.relationship("RecipeIngredient",
+                                  secondary="usingredientsmeasures",
+                                  backref=db.backref("usamounts"))
+
+
+class MetricAmount(db.Model):
+    """Conversion for ingredients in recipes."""
+
+    __tablename__ = "metricamounts"
+
+    metric_amount_id = db.Column(db.Integer,
+                                 autoincrement=True,
+                                 primary_key=True)
+    metric_amount = db.Column(db.Integer,
+                              unique=True,
+                              nullable=False)
+
+    def __repr__(self):
+        """Provide helpful representation when printed."""
+
+        return "<MetricAmount metric_amt_id=%s metric_amt=%s>" % (
+                                                        self.metric_amount_id,
+                                                        self.metric_amount)
+
+    #Define relationship ingredients table
+    recipesingredients = db.relationship("RecipeIngredient",
+                                  secondary="metricingredientsmeasures",
+                                  backref=db.backref("metricamounts"))
 
 
 class Instruction(db.Model):
@@ -249,6 +335,9 @@ class RecipeBox(db.Model):
         return "<RecipeBox recipe_id=%s box_id=%s>" % (self.recipe_id,
                                                        self.box_id)
 
+    #Define relationship boxes table
+    boxes = db.relationship("Box",
+                            backref=db.backref("recipesboxes"))
 
 class RecipeIngredient(db.Model):
     """Connects Recipe with Ingredient."""
@@ -264,6 +353,8 @@ class RecipeIngredient(db.Model):
                               db.ForeignKey('ingredients.ingredient_id'))
 
     original_string = db.Column(db.String(200), nullable=False)
+
+    link = db.Column(db.String(200), nullable=True)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
@@ -283,7 +374,7 @@ class IngredientType(db.Model):
                         primary_key=True)
     type_name = db.Column(db.String(100),
                           unique=True,
-                          nullable=False)
+                          nullable=True)
 
     def __repr__(self):
         """Provide helpful representation when printed."""
@@ -312,25 +403,46 @@ class RecipeServing(db.Model):
                                                                self.serving_id)
 
 
-class IngredientMeasure(db.Model):
-    """Ingredient Measurement."""
+class USIngredientMeasure(db.Model):
+    """US Ingredient Measurement."""
 
-    __tablename__ = "ingredientsmeasures"
+    __tablename__ = "usingredientsmeasures"
 
-    ingredientmeasure_id = db.Column(db.Integer,
-                                     autoincrement=True,
-                                     primary_key=True)
-    ingredient_id = db.Column(db.Integer,
-                              db.ForeignKey('ingredients.ingredient_id'))
-    measure_id = db.Column(db.Integer,
-                           db.ForeignKey('measurements.measure_id'))
+    usingmeasure_id = db.Column(db.Integer,
+                                autoincrement=True,
+                                primary_key=True)
+    recipeingredient_id = db.Column(db.Integer,
+                                    db.ForeignKey('recipesingredients.recipeingredient_id'))
+    us_measure_id = db.Column(db.Integer,
+                              db.ForeignKey('usmeasurements.us_measure_id'))
+    us_amount_id = db.Column(db.Integer,
+                             db.ForeignKey('usamounts.us_amount_id'))
 
     def __repr__(self):
         """Provide helpful representation when printed."""
 
-        return "<IngredMeasure ingred_id=%s measure_id=%s>" % (
-                                                            self.ingredient_id,
-                                                            self.measure_id)
+        return "<USIngredMeasure usingmeasure_id=%s>" % (self.usingmeasure_id)
+
+
+class MetricIngredientMeasure(db.Model):
+    """Metric Ingredient Measurement."""
+
+    __tablename__ = "metricingredientsmeasures"
+
+    metringmeasure_id = db.Column(db.Integer,
+                                  autoincrement=True,
+                                  primary_key=True)
+    recipeingredient_id = db.Column(db.Integer,
+                                    db.ForeignKey('recipesingredients.recipeingredient_id'))
+    metric_measure_id = db.Column(db.Integer,
+                                  db.ForeignKey('metricmeasurements.metric_measure_id'))
+    metric_amount_id = db.Column(db.Integer,
+                                 db.ForeignKey('metricamounts.metric_amount_id'))
+
+    def __repr__(self):
+        """Provide helpful representation when printed."""
+
+        return "<MetricIngredMeasure metringmeasure_id=%s>" % (self.metringmeasure_id)
 
 
 class RecipeCourse(db.Model):
@@ -360,8 +472,8 @@ def connect_to_db(app):
 
     # Configure to use our PostgreSQL database
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///recipes'
-    # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testrecipes'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testing'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testrecipes'
+    # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testing'
     db.app = app
     db.init_app(app)
 

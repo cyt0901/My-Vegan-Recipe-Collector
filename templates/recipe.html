@@ -8,7 +8,7 @@
             <img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive img-rounded">
         </div>
         <div class="col-xs-12 col-md-7">
-            <h1>{{ recipe.recipe_name }}</h1>
+            <h1 id="recname">{{ recipe.recipe_name }}</h1>
             {% if session.get("user_id") %}
                 <h4>
                     <form action="/save_recipe/{{ recipe.recipe_id }}">
@@ -19,9 +19,10 @@
             Source: <a href="{{ recipe.src_url }}">{{ recipe.websites.site_name }}</a><br>
             Total Time: {{ recipe.time_in_min}} minutes<br>
             Course(s): 
-            {% for course in recipe.courses %}
-                {{ course.course_name }}
-            {% endfor %}<br>
+            {% for course in recipe.courses[:-1] %}
+                {{ course.course_name }},
+            {% endfor %}
+            {{ recipe.courses[-1].course_name }}<br>
             Serving Size:
             <select id="serving">
                 <option id="serving-opt{{ recipe.servings[0].serving_size }}" selected>
@@ -35,11 +36,41 @@
             </select>
             <button id="convert">Convert</button>
             <br><br><br>
-            <span id="ingredients">Ingredients:<br>
-            {% for ingredient in recipe.recipesingredients %}
-                <li>{{ ingredient.original_string }}</li>
-            {% endfor %}
-            </span>
+            Ingredients:<br>
+            <table class="table" id="ingredients">
+                {% for ingredient in recipe.recipesingredients %}
+                <tr>
+                    <td>
+                        {% if ingredient.usamounts %}
+                            {% for amount in ingredient.usamounts[:-1] %}
+                                {{ amount.us_amount }}-
+                            {% endfor %}
+                            {{ ingredient.usamounts[-1].us_amount}}
+                        {% endif %}
+                        {% if ingredient.usmeasurements %}
+                            {{ ingredient.usmeasurements[0].us_unit }}
+                        {% endif %}                            
+                    </td>                    
+                    <td>
+                        {% if ingredient.metricamounts %}
+                            ({% for amount in ingredient.metricamounts[:-1] %}
+                                {{ amount.metric_amount }}-
+                            {% endfor %}
+                            {{ ingredient.metricamounts[-1].metric_amount }}
+                            {{ ingredient.metricmeasurements[0].metric_unit }})
+                        {% endif %}
+
+                    </td>
+                    <td>
+                        {% if ingredient.link %}
+                            <a href="{{ ingredient.link }}">{{ ingredient.original_string }}</a>
+                        {% else %}
+                            {{ ingredient.original_string }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
         </div>
     </div>
     <br><br>
@@ -64,13 +95,26 @@
     </div>
 </div>
 <script>
-    function makeCurrentSelection(evt) {
-        var serving_size = $('#serving').val();
-        console.log(serving_size)
+    function replaceNumbers(result) {
+        Something
+    }
+
+    function convert(evt) {
+
+        var info = {
+            "serving": $('#serving').val(),
+            "recipe_name": $('#recname').html()
+        };
+        // var serving = $('#serving').val();
+        // var recipe_name = $('#recname').html();
+        
+        console.log(info.serving)
+        console.log(info.recipe_name)
+        $.get('/convert.json', info, replaceNumbers);
 
     }
 
-    $('#convert').on('click', makeCurrentSelection);
+    $('#convert').on('click', convert);
 </script>
 
 {% endblock %}
