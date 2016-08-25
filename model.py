@@ -1,6 +1,7 @@
 """Models and database functions for Vegan Recipes project."""
 
 from flask_sqlalchemy import SQLAlchemy
+import bcrypt
 
 # This is the connection to the PostgreSQL database; we're getting this through
 # the Flask-SQLAlchemy helper library. On this, we can find the `session`
@@ -23,7 +24,7 @@ class User(db.Model):
                         autoincrement=True,
                         primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
-    password = db.Column(db.String(64), nullable=False)
+    password = db.Column(db.String(200), nullable=False)
 
     def __repr__(self):
         """Provide helpful representation when printed."""

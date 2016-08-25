@@ -27,12 +27,13 @@
                 <input type="hidden" name="recipe_id" id="recipe_id" value="{{ recipe.recipe_id }}">
                 Serving Size:
                 <select name="serving" id="serving">
-                    <label><option id="serving-opt{{ recipe.servings[0].serving_size }}" selected>
-                        {{ recipe.servings[0].serving_size }}
-                    </option></label>
                     {% for number in serving_range %}
                         {% if number != recipe.servings[0].serving_size %}
                             <label><option id="serving-opt{{ number }}">{{ number }}</option></label>
+                        {% else %}
+                            <label><option id="serving-opt{{ recipe.servings[0].serving_size }}" selected>
+                                {{ recipe.servings[0].serving_size }}
+                            </option></label>                            
                         {% endif %}
                     {% endfor %}
                 </select>
@@ -102,7 +103,7 @@
         console.log(results);
         var newResults = JSON.parse(results);
 
-        for (i=0; i<newResults.length; i++) {
+        for (var i=0; i<newResults.length; i++) {
             var usAmount = newResults[i].us_amount;
             var metAmount = newResults[i].metric_amount;
             var ingredient = newResults[i].ingredient;

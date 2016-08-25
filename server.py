@@ -8,6 +8,7 @@ from model import connect_to_db, db
 from model import User, Recipe, Website, Serving, Ingredient, USMeasurement, MetricMeasurement, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
 from fractions import Fraction
 import json
+import bcrypt
 
 app = Flask(__name__)
 app.secret_key = "ABC"
@@ -41,7 +42,7 @@ def register_process():
     if not session.get("user_id"):
         # Get form variables
         username = request.form.get("username")
-        password = request.form.get("password")
+        password = bcrypt.hashpw(request.form.get("password").encode('utf-8'), bcrypt.gensalt())
 
         # Check database to see if username is available for use
         if User.query.filter_by(username=username).all():
@@ -80,7 +81,7 @@ def login_process():
     if not session.get("user_id"):
         # Get form variables
         username = request.form.get("username")
-        password = request.form.get("password")
+        password = request.form.get("password").encode('utf-8')
 
         user = User.query.filter_by(username=username).first()
 
@@ -90,7 +91,7 @@ def login_process():
             return redirect("/login")
 
         # Query database to see if password is correct
-        if user.password != password:
+        if not bcrypt.checkpw(password, user.password.encode('utf-8')):
             flash("Incorrect password")
             return redirect("/login")
 
@@ -198,8 +199,7 @@ def show_search_results():
         for course in find_courses:
             find_courses = course.recipes
             for recipe in find_courses:
-                if recipe_count.get(recipe):
-                    course_count[recipe] = course_count.get(recipe, 0) + 1
+                course_count[recipe] = course_count.get(recipe, 0) + 1
 
         # for ALL courses
         if search_term == "all":
@@ -307,16 +307,17 @@ def update_settings():
     if session.get("user_id"):
         # Get form variables
         username = request.form.get("username")
-        password = request.form.get("password")
+        password = request.form.get("password").encode('utf-8')
 
         user_id = session["user_id"]
 
         user = User.query.filter_by(user_id=user_id).first()
 
-        user.username = username
-        user.password = password
+        if username:
+            user.username = username
+        if password:
+            user.password = bcrypt.hashpw(password, bcrypt.gensalt())
 
-        db.session.add(user)
         db.session.commit()
 
         flash("Your information has been updated")
@@ -338,7 +339,6 @@ def show_conversion():
     all_ingredients = []
     # for each ingredient in recipe
     for i in range(len(recipe.recipesingredients)):
-    # for ingredient in recipe.recipesingredients:
         ingredient_info = {}
         amounts = []
         metrics = []
@@ -412,8 +412,6 @@ def show_conversion():
         else:
             ingredient_info['extlink'] = None
 
-        # ingredient_info = json.dumps(ingredient_info)
-        # all_ingredients["ing" + str(i)] = ingredient_info
         all_ingredients.append(ingredient_info)
 
     return json.dumps(all_ingredients)
