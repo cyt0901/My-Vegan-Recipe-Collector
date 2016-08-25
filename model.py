@@ -363,6 +363,11 @@ class RecipeIngredient(db.Model):
                                                             self.recipe_id,
                                                             self.ingredient_id)
 
+    #Define relationship usingredientsmeasures table
+    usingredientsmeasures = db.relationship("USIngredientMeasure",
+                                            backref=db.backref("recipesingredients"))
+
+
 
 class IngredientType(db.Model):
     """Type of Ingredient."""

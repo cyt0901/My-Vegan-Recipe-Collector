@@ -2,27 +2,16 @@
 
 
 from jinja2 import StrictUndefined
-
-# from flask import Flask, render_template, redirect, request, flash, session
 from flask import Flask, render_template, redirect, flash, session, request
 from flask_debugtoolbar import DebugToolbarExtension
-
-from sqlalchemy import update
-
 from model import connect_to_db, db
 from model import User, Recipe, Website, Serving, Ingredient, USMeasurement, MetricMeasurement, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
-
+from fractions import Fraction
 import json
 
-
-
 app = Flask(__name__)
-
 app.secret_key = "ABC"
 
-# Normally, if you use an undefined variable in Jinja2, it fails
-# silently. This is horrible. Fix this so that, instead, it raises an
-# error.
 app.jinja_env.undefined = StrictUndefined
 
 
@@ -334,93 +323,100 @@ def update_settings():
         return redirect("/profile")
 
 
-@app.route('/convert.json')
-def convert_serving():
-    """Return conversions of serving size."""
+@app.route('/show_conversion.json')
+def show_conversion():
+    """Show conversion of all measurements."""
 
     new_serving = int(request.args.get("serving"))
-    recipe_name = request.args.get("recipe_name")
+    recipe_id = int(request.args.get("recipe_id"))
 
-    #query database for recipe
-    recipe = Recipe.query.filter_by(recipe_name=recipe_name).first()
+    recipe = Recipe.query.filter_by(recipe_id=recipe_id).first()
     orig_serving = recipe.servings[0].serving_size
 
-    all_ings = recipe.recipesingredients
-    # calculate conversion values for each ingredient
-    for ingredient in recipe.recipesingredients:
-        print ingredient
+    conversion_amount = float(new_serving) / orig_serving
 
-    print "\n\n\n"
-    print "new_serving......   ", new_serving
-    print "recipe_name.......   ", recipe_name
-    print "recipe......   ", recipe
-    print "orig_serving....   ", orig_serving
-    print "all_ings.....   ", all_ings
-    print "\n\n\n"
+    all_ingredients = []
+    # for each ingredient in recipe
+    for i in range(len(recipe.recipesingredients)):
+    # for ingredient in recipe.recipesingredients:
+        ingredient_info = {}
+        amounts = []
+        metrics = []
+        # check if usamounts exists
+        if recipe.recipesingredients[i].usamounts:
+            for amount in recipe.recipesingredients[i].usamounts:
+                # calculate new decimal value as a float
+                new_decimal = float(amount.us_decimal) * conversion_amount
+                # find the whole number value for the new_decimal value
+                whole_num = int(new_decimal)
+                # only a fraction exists; find the fractional representation
+                if whole_num == 0:
+                    new_fraction = str(Fraction(new_decimal).limit_denominator(32))
+                # no fraction; only whole num
+                elif (new_decimal - whole_num) == 0.0:
+                    new_fraction = str(whole_num)
+                # mixed fraction; has whole num and fraction
+                else:
+                    if Fraction(new_decimal - whole_num).limit_denominator(32) != 0:
+                        new_fraction = str(whole_num) + " " + str(Fraction(new_decimal - whole_num).limit_denominator(32))
+                    else:
+                        new_fraction = str(whole_num)
+                # for each amount in ingredient.usamounts, add to amounts list
+                amounts.append(new_fraction)
+            # check length of amounts list
+            if len(amounts) > 1:
+                amounts = amounts[0] + " - " + amounts[1]
+                # check if usmeasurements exists; if so, add to string
+                if recipe.recipesingredients[i].usmeasurements:
+                    amounts = amounts + " " + recipe.recipesingredients[i].usmeasurements[0].us_unit
+            else:
+                amounts = amounts[0]
+                # check if usmeasurements exists; if so, add to string
+                if recipe.recipesingredients[i].usmeasurements:
+                    amounts = amounts + " " + recipe.recipesingredients[i].usmeasurements[0].us_unit
 
+        # check if only usmeasurements exists, like 'pinch'
+        elif recipe.recipesingredients[i].usmeasurements and not recipe.recipesingredients[i].usamounts:
+            if conversion_amount < 0.5:
+                amounts = "small smidgen"
+            elif conversion_amount == 0.5:
+                amounts = "smidgen"
+            elif 0.5 < conversion_amount < 1.0:
+                amounts = "small pinch"
+            elif conversion_amount == 1.0:
+                amounts = recipe.recipesingredients[i].usmeasurements[0].us_unit
+            elif conversion_amount > 1.0:
+                amounts = str(int(round(conversion_amount))) + " " + recipe.recipesingredients[i].usmeasurements[0].us_unit + "es"
 
-@app.route('/test')
-def test_page():
-    """To test data"""
+        # check if metricamounts exists
+        if recipe.recipesingredients[i].metricamounts:
+            for amount in recipe.recipesingredients[i].metricamounts:
+                # calculate new metric amount
+                new_metric = str(float(amount.metric_amount) * conversion_amount)
+                metrics.append(new_metric)
+            # check length of metrics list
+            if len(metrics) > 1:
+                metrics = "(" + metrics[0] + " - " + metrics[1] + " " + recipe.recipesingredients[i].metricmeasurements[0].metric_unit + ")"
+            else:
+                metrics = "(" + metrics[0] + " " + recipe.recipesingredients[i].metricmeasurements[0].metric_unit + ")"
 
-    new_serving = int('6')
+        # add amounts to ingredient_info
+        ingredient_info['us_amount'] = amounts
+        # add metrics to ingredient_info
+        ingredient_info['metric_amount'] = metrics
+        # add ingredient string to ingredient_info
+        ingredient_info['ingredient'] = recipe.recipesingredients[i].original_string
 
-    recipe = Recipe.query.filter_by(recipe_id=1).first()
-    orig_serving = recipe.servings[0].serving_size
+        if recipe.recipesingredients[i].link:
+            ingredient_info['extlink'] = recipe.recipesingredients[i].link
+        else:
+            ingredient_info['extlink'] = None
 
-    for ing in recipe.recipesingredients:
-        print ing
-        print ing.usamounts
-        if ing.usamounts:
-            for amount in ing.usamounts:
-                print amount.us_amount
+        # ingredient_info = json.dumps(ingredient_info)
+        # all_ingredients["ing" + str(i)] = ingredient_info
+        all_ingredients.append(ingredient_info)
 
-
-
-    print "-" * 50
-    print "\n\n\n"
-    print "new_serving:::::: ", new_serving
-    print "recipe::::::  ", recipe
-    print "orig_serving::::::   ", orig_serving
-    print "\n\n\n"
-    print "-" * 50
-
-    return render_template("testpage.html",
-                           new_serving=new_serving,
-                           recipe=recipe,
-                           orig_serving=orig_serving)
-
-
-@app.route('/newtest')
-def new_testpage():
-
-    new_serving = int('6')
-    recipe = Recipe.query.filter_by(recipe_id=1).first()
-    orig_serving = recipe.servings[0].serving_size
-
-    calculation = float(new_serving) / float(orig_serving)
-
-    print "\n\n\n"
-
-    print new_serving, "/", orig_serving
-    print recipe
-    print len(recipe.recipesingredients)
-    for i in recipe.recipesingredients:
-        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        print i.ingredients.ingredient_name
-        for x in i.usamounts:
-            print x.us_amount
-            print x.us_decimal
-            print ">>>>>", float(x.us_decimal) * calculation
-            print "++++++++++++++++++"
-        for y in i.metricamounts:
-            print y.metric_amount
-            print ">>>>>>", float(y.metric_amount) * calculation
-
-    print calculation
-
-    print "Done-----------\n\n\n"
-
+    return json.dumps(all_ingredients)
 
 
 
