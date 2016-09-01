@@ -1,17 +1,23 @@
 """Vegan Recipes"""
 
-
+import os
 from jinja2 import StrictUndefined
-from flask import Flask, render_template, redirect, flash, session, request
+from flask import Flask, render_template, redirect, flash, session, request, url_for, send_from_directory, jsonify
 from flask_debugtoolbar import DebugToolbarExtension
 from model import connect_to_db, db
 from model import User, Recipe, Website, Serving, Ingredient, USMeasurement, MetricMeasurement, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
 from fractions import Fraction
 import json
 import bcrypt
+from werkzeug import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "ABC"
+
+app.config['UPLOAD_FOLDER'] = 'static/uploads/'
+app.config['ALLOWED_EXTENSIONS'] = set(['png', 'jpg', 'jpeg'])
+# set max payload 1MB
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024
 
 app.jinja_env.undefined = StrictUndefined
 
@@ -139,6 +145,32 @@ def show_profile():
         return redirect("/")
 
 
+@app.route('/upload', methods=['POST'])
+def upload_img():
+    """Upload a profile picture."""
+
+    file = request.files['file']
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+        user = User.query.filter_by(user_id=session["user_id"]).first()
+
+        if user.profile_img:
+            # remove old img from uploads folder
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], user.profile_img))
+
+        # add img name to database for user
+        user.profile_img = filename
+
+        db.session.commit()
+    else:
+        flash("Only the following formats allowed: .png, .jpg, .jpeg")
+
+    return redirect("/profile")
+
+
 @app.route('/search')
 def show_search_form():
     """Show search form."""
@@ -260,8 +292,8 @@ def save_recipe_to_box():
     """Save the recipe to a user recipe box."""
 
     if session.get("user_id"):
-        label_name = request.form.get("box_label")
-        new_label_name = request.form.get("new_label")
+        label_name = request.form.get("box-label")
+        new_label_name = request.form.get("new-label")
         recipe_id = request.form.get("recipe-id")
         user_id = session['user_id']
 
@@ -275,12 +307,16 @@ def save_recipe_to_box():
 
             box_id = Box.query.filter_by(user_id=user_id, label_name=new_label_name).first().box_id
 
-        recipebox = RecipeBox(recipe_id=recipe_id,
-                              box_id=box_id)
-        db.session.add(recipebox)
-        db.session.commit()
+        if RecipeBox.query.filter_by(box_id=box_id, recipe_id=recipe_id).all():
+            flash("This recipe already exists in the selected recipe box.")
+            return redirect('/save_recipe/' + str(recipe_id))
+        else:
+            recipebox = RecipeBox(recipe_id=recipe_id,
+                                  box_id=box_id)
+            db.session.add(recipebox)
+            db.session.commit()
 
-        return redirect("/my_recipes")
+            return redirect("/my_recipes")
 
 
 @app.route('/my_recipes')
@@ -392,7 +428,7 @@ def show_conversion():
         if recipe.recipesingredients[i].metricamounts:
             for amount in recipe.recipesingredients[i].metricamounts:
                 # calculate new metric amount
-                new_metric = str(float(amount.metric_amount) * conversion_amount)
+                new_metric = str("{0:.2f}".format(float(amount.metric_amount) * conversion_amount))
                 metrics.append(new_metric)
             # check length of metrics list
             if len(metrics) > 1:
@@ -415,6 +451,31 @@ def show_conversion():
         all_ingredients.append(ingredient_info)
 
     return json.dumps(all_ingredients)
+
+
+@app.route('/my_recipes.json')
+def get_my_recipes():
+    """Returns json data for my_recipes"""
+
+    data = [{"name": "My Recipes", "parent": None, "value": 6, "img": "/static/img/icon9.png"}]
+    user_id = session["user_id"]
+    boxes = Box.query.filter_by(user_id=user_id).all()
+
+    for box in boxes:
+        each_box = dict(zip(["name", "parent", "value", "img"], [box.label_name, "My Recipes", 4, "/static/img/leaf0.png"]))
+        data.append(each_box)
+        for recipe in box.recipes:
+            each_recipe = dict(zip(["name", "parent", "value", "img", "url"], [recipe.recipe_name, box.label_name, 3.5, recipe.img_url, "/recipe/" + str(recipe.recipe_id)]))
+            data.append(each_recipe)
+
+    return json.dumps(data)
+
+
+######### HELPER FUNCTIONS ####################################################
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
+
 
 
 

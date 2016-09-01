@@ -70,11 +70,15 @@ def get_ingredients(soup):
 
         # start with all lowercase
         ing = ing.lower()
+
         metric_amount = []
         metrics_measures = {}
+
         # search individual ingredient string to see if metric measurement is in it
         # if not, leave string as is; if it does, save metric values
         if re.search(r'\(\d.*?\)|\(~\d.*?\)', ing):
+
+            metric_unit = None
             # remove metric measurement from string, and return new string
             ing = filter(None, re.split(r'(\(\d.*?\))|(\(~\d.*?\))', ing))
             m = filter(None, re.split(r'\W', ing.pop(1)))
@@ -91,8 +95,9 @@ def get_ingredients(soup):
                 metric_amount.append(int(m[2]))
                 metric_unit = m[3]
 
-            # add metric measurements to dictionary
-            metrics_measures = dict(zip(['metric_unit', 'metric_amount'], [metric_unit, metric_amount]))
+            if metric_unit:
+                # add metric measurements to dictionary
+                metrics_measures = dict(zip(['metric_unit', 'metric_amount'], [metric_unit, metric_amount]))
 
         # check if string has any other ()
         # if so, replace with 'placeholder'
@@ -129,6 +134,8 @@ def get_ingredients(soup):
             if unit in ing:
                 if unit is "-ounce can":
                     ing = filter(None, re.split(r'(\d*%s\s)' % unit, ing))
+                elif unit is "pinch" and len(filter(None, re.split(r'(%s)' % unit, ing))) > 1:
+                    ing = ''.join(filter(None, re.split(r'(%s)' % unit, ing))[1:])
                 elif (unit + 's') not in ing:
                     ing = filter(None, re.split(r'(%s)' % unit, ing))
                 else:
@@ -138,6 +145,9 @@ def get_ingredients(soup):
             # check if ing[0] is a range; if so, split the numbers
             if "-" in ing[0]:
                 ing[0] = filter(None, ing[0].split("-"))
+
+        if "~" in ing[0]:
+            ing[0] = ''.join(filter(None, ing[0].split("~")))
 
         # make sure all ingredients are now lists
         if type(ing) != list:

@@ -1,6 +1,6 @@
 """Utility file to seed database with data from api and through webscraping"""
 
-from model import User, Recipe, Website, Serving, Ingredient, USMeasurement, MetricMeasurement, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse
+from model import User, Box, RecipeBox, Recipe, Website, Serving, Ingredient, USMeasurement, MetricMeasurement, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse
 
 from model import connect_to_db, db
 from server import app
@@ -8,17 +8,44 @@ from webscrape_details import get_all_recipe_info
 import unirest
 import os
 import re
+import bcrypt
 
 
 def load_users(username, password):
     """Load sample users."""
 
-    print "Users"
+    print "User"
+
+    password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
     user = User(username=username,
                 password=password)
 
     db.session.add(user)
+    db.session.commit()
+
+
+def load_boxes(user_id, label_name):
+    """Load sample boxes."""
+
+    print "Box"
+
+    box = Box(user_id=user_id,
+              label_name=label_name)
+
+    db.session.add(box)
+    db.session.commit()
+
+
+def load_recipeboxes(recipe_id, box_id):
+    """Load sample recipe boxes."""
+
+    print "Recipe Box"
+
+    recipebox = RecipeBox(recipe_id=recipe_id,
+                          box_id=box_id)
+
+    db.session.add(recipebox)
     db.session.commit()
 
 
@@ -375,12 +402,83 @@ if __name__ == "__main__":
     db.create_all()
 
     # test-case urls
-    urls = ["http://minimalistbaker.com/sun-dried-tomato-chickpea-burgers/",
-            "http://minimalistbaker.com/cauliflower-rice-stuffed-peppers/",
-            "http://minimalistbaker.com/banana-split-smoothie/",
-            "http://minimalistbaker.com/strawberry-rhubarb-crumble-bars-gf/",
-            "http://minimalistbaker.com/no-bake-almond-butter-cup-bars/",
-            "http://minimalistbaker.com/asian-quinoa-salad/"]
+    # urls = ["http://minimalistbaker.com/sun-dried-tomato-chickpea-burgers/",
+    #         "http://minimalistbaker.com/cauliflower-rice-stuffed-peppers/",
+    #         "http://minimalistbaker.com/banana-split-smoothie/",
+    #         "http://minimalistbaker.com/strawberry-rhubarb-crumble-bars-gf/",
+    #         "http://minimalistbaker.com/no-bake-almond-butter-cup-bars/",
+    #         "http://minimalistbaker.com/watermelon-sashimi/",
+    #         "http://minimalistbaker.com/my-go-to-avocado-toast/",
+    #         "http://minimalistbaker.com/coconut-cream-pie-vegan-gf/",
+    #         "http://minimalistbaker.com/grilled-corn-sriracha-aioli/",
+    #         "http://minimalistbaker.com/vegan-milky-way/",
+    #         "http://minimalistbaker.com/smores-bars-vegan-gf/",
+    #         "http://minimalistbaker.com/portobello-steaks-avocado-chimichurri/",
+    #         "http://minimalistbaker.com/summer-tomato-cantaloupe-salad/",
+    #         "http://minimalistbaker.com/creamy-lime-pie-bars/",
+    #         "http://minimalistbaker.com/healthy-fig-newtons-gf/",
+    #         "http://minimalistbaker.com/mango-energy-bites/",
+    #         "http://minimalistbaker.com/grilled-corn-zucchini-salad-sun-dried-tomato-vinaigrette/",
+    #         "http://minimalistbaker.com/chickpea-shawarma-dip/",
+    #         "http://minimalistbaker.com/quinoa-taco-meat/",
+    #         "http://minimalistbaker.com/vegan-chocolate-ice-cream/",
+    #         "http://minimalistbaker.com/thai-carrot-salad-curried-cashews/"
+    #         "http://minimalistbaker.com/banana-cream-pie-vegan-gf/",
+    #         "http://minimalistbaker.com/veggie-brown-rice-sushi/",
+    #         "http://minimalistbaker.com/crispy-baked-tacos/",
+    #         "http://minimalistbaker.com/vegan-lemon-curd/",
+    #         "http://minimalistbaker.com/white-chocolate-macadamia-nut-cheesecake/",
+    #         "http://minimalistbaker.com/creamy-mushroom-asparagus-pasta/",
+    #         "http://minimalistbaker.com/dark-chocolate-golden-milk-macaroons/",
+    #         "http://minimalistbaker.com/creamy-pineapple-cucumber-smoothie/",
+    #         "http://minimalistbaker.com/thai-spring-rolls-cashew-dipping-sauce/",
+    #         "http://minimalistbaker.com/gingery-thai-kale-salad-cashew-dressing/",
+    #         "http://minimalistbaker.com/easy-vegan-kimchi/",
+    #         "http://minimalistbaker.com/easy-chana-masala/",
+    #         "http://minimalistbaker.com/vegan-snickers-cheesecake/",
+    #         "http://minimalistbaker.com/crispy-hash-brown-haystacks/",
+    #         "http://minimalistbaker.com/kale-white-bean-artichoke-dip/",
+    #         "http://minimalistbaker.com/banana-hempseed-berry-pudding/",
+    #         "http://minimalistbaker.com/1-pot-red-lentil-chili/",
+    #         "http://minimalistbaker.com/peanut-butter-and-jelly-chia-pudding/",
+    #         "http://minimalistbaker.com/1-pot-red-lentil-chili/",
+    #         "http://minimalistbaker.com/easy-vegan-chocolate/",
+    #         "http://minimalistbaker.com/mushroom-and-leek-risotto/",
+    #         "http://minimalistbaker.com/mango-ginger-kale-green-smoothie/",
+    #         "http://minimalistbaker.com/general-tsos-tofu/",
+    #         "http://minimalistbaker.com/super-chunky-coconut-granola/",
+    #         "http://minimalistbaker.com/garlic-chili-pasta-with-roasted-cauliflower/",
+    #         "http://minimalistbaker.com/orange-almond-biscotti/",
+    #         "http://minimalistbaker.com/coconut-papaya-smoothie/",
+    #         "http://minimalistbaker.com/vegan-papaya-salad/",
+    #         "http://minimalistbaker.com/quinoa-stuffed-sweet-potatoes/",
+    #         "http://minimalistbaker.com/blood-orange-green-smoothie/",
+    #         "http://minimalistbaker.com/thyme-white-bean-pot-pies/",
+    #         "http://minimalistbaker.com/peanut-butter-and-jelly-snack-bars/",
+    #         "http://minimalistbaker.com/apple-pecan-arugula-salad/",
+    #         "http://minimalistbaker.com/pumpkin-pie-parfaits-vegan-gf/",
+    #         "http://minimalistbaker.com/the-best-vegan-apple-crisp/",
+    #         "http://minimalistbaker.com/garlic-herb-flatbread/",
+    #         "http://minimalistbaker.com/roasted-sweet-potato-kale-breakfast-hash/",
+    #         "http://minimalistbaker.com/vegan-stuffed-poblano-peppers/",
+    #         "http://minimalistbaker.com/white-bean-kale-salad-with-tahini-dressing/"
+    #         "http://minimalistbaker.com/vegan-singapore-noodles/",
+    #         "http://minimalistbaker.com/curried-butternut-squash-soup/",
+    #         "http://minimalistbaker.com/spaghetti-squash-pasta-with-basil-pesto/",
+    #         "http://minimalistbaker.com/simple-chickpea-bolognese/",
+    #         "http://minimalistbaker.com/20-minute-pumpkin-butter/",
+    #         "http://minimalistbaker.com/smoky-harissa-eggplant-dip/",
+    #         "http://minimalistbaker.com/butternut-squash-veggie-pizza/",
+    #         "http://minimalistbaker.com/3-ingredient-mocha-milkshake/",
+    #         "http://minimalistbaker.com/easy-vegan-ramen/",
+    #         "http://minimalistbaker.com/easy-vegan-fried-rice/",
+    #         "http://minimalistbaker.com/6-layer-mexican-pinwheels/",
+    #         "http://minimalistbaker.com/pretzel-peanut-butter-chocolate-pie/",
+    #         "http://minimalistbaker.com/peanut-butter-overnight-oats/",
+    #         "http://minimalistbaker.com/almond-lemon-blueberry-pie-bars/",
+    #         "http://minimalistbaker.com/diy-dark-chocolate-almond-bars/",
+    #         "http://minimalistbaker.com/vegan-thai-iced-tea/"]
+    urls = []
 
     for url in urls:
 
@@ -393,10 +491,7 @@ if __name__ == "__main__":
         src_url = scrape_info['src_url']
         img_url = scrape_info['img_url']
 
-        #general recipe info through api request
-        url_recipe_name = filter(None, re.split(r'.*com\/', url))[0]
-
-        response1 = unirest.get("https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/extract?forceExtraction=false&url=http://minimalistbaker.com/%s" % url_recipe_name,
+        response1 = unirest.get("https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/extract?forceExtraction=false&url=%s" % url,
             headers={
                 "X-Mashape-Key": os.environ['MASHAPE_KEY']
             }
@@ -433,7 +528,40 @@ if __name__ == "__main__":
         load_recipe_servings(servings, recipe_name)
         load_recipe_courses(recipe_name, courses)
 
-    # test-case users
-    #load_users(username, password)
-    load_users('Ada', '12345')
-    load_users('Grace', 'hbacad')
+    # # test-case users
+    # load_users('Ada', '12345')
+    # load_users('Grace', 'grace')
+    # load_users('Balloonicorn', 'balloonicorn')
+
+    # # test-case user boxes
+    # load_boxes(1, "Sample")
+    # load_boxes(1, "Another Label!")
+    # load_boxes(2, "Stuff...")
+    load_boxes(1, "Party Food")
+    load_boxes(1, "Next Week Dinner")
+
+    # # test-case user recipe boxes
+    # load_recipeboxes(1, 1)
+    # load_recipeboxes(2, 1)
+    # load_recipeboxes(3, 1)
+    # load_recipeboxes(4, 2)
+    # load_recipeboxes(5, 2)
+    # load_recipeboxes(6, 3)
+    # load_recipeboxes(5, 3)
+    # load_recipeboxes(5, 1)
+    # load_recipeboxes(6, 1)
+    # load_recipeboxes(7, 2)
+    # load_recipeboxes(8, 1)
+    # load_recipeboxes(9, 2)
+    load_recipeboxes(10, 5)
+    load_recipeboxes(13, 4)
+    load_recipeboxes(20, 5)
+    load_recipeboxes(63, 4)
+    load_recipeboxes(55, 2)
+    load_recipeboxes(28, 4)
+    load_recipeboxes(19, 1)
+    load_recipeboxes(35, 5)
+    load_recipeboxes(70, 2)
+    load_recipeboxes(59, 4)
+
+

@@ -7,7 +7,7 @@
 <form action="/save_recipe" method="POST" id="label-form">
     <input type="hidden" id="recipe-id" name="recipe-id" value="{{ recipe.recipe_id }}">
     Choose Existing Label<br>
-    <select name="box_label" id="box_label" class="my-labels">
+    <select name="box-label" id="box-label" class="my-labels">
         <label><option disable selected value> (My Labels) </option></label>
         {% for box in boxes %}
             <label><option value="{{ box.label_name }}">{{ box.label_name }}</option></label>
@@ -16,7 +16,7 @@
     <br><br>
     <label> 
         Create New Label<br>
-        <input type="text" id="new_label" name="new_label" class="my-labels">
+        <input type="text" id="new-label" name="new-label" class="my-labels" value="Some New Label">
     </label>
     <br><br>
     <label><input type="submit" value="Save"></label>

@@ -5,20 +5,35 @@
 <h1>Search</h1>
 <!-- filtered searches -->
 <form action="/results" id="search-form">
-    <label><span name="heading">Include Ingredients</span></label><br>
+    <label>Search By Ingredients</label>
+    <span class="glyphicon glyphicon-menu-down"></span><br>
     {% for t in all_types %}
-        <ul>{{ t.type_name }}
-            {% for ingredient in t.ingredients %}
-                <label><input type="checkbox" name="ingredient" value="{{ ingredient.ingredient_name }}"> {{ ingredient.ingredient_name }} </label>
-            {% endfor %}
-        </ul>
+        <div class="expandable">
+            {% if t.type_name ==  "Nut butters, Jams, and Honey" %}
+                Nut butters and Jams
+            {% elif t.type_name == "Milk, Eggs, Other Dairy" %}
+                Dairy Alternatives
+            {% else %}
+                {{ t.type_name }}
+            {% endif %}
+                <span class="glyphicon glyphicon-triangle-bottom"></span>
+                <div class="expandable">
+                    {% for ingredient in t.ingredients %}
+                        <label><input type="checkbox" name="ingredient" value="{{ ingredient.ingredient_name }}"> {{ ingredient.ingredient_name }} </label>
+                    {% endfor %}
+                </div>
+        </div>
     {% endfor %}
-    <label><span name="heading">Include Courses</span></label><br>
+    <br>
+    <label>Search By Courses</label>
+    <span class="glyphicon glyphicon-menu-down"></span><br>
     {% for course in all_courses %}
-        <label><input type="checkbox" name="course" value="{{ course.course_name }}"> {{ course.course_name }} </label>
+        <div class="expandable">
+            <label><input type="checkbox" name="course" value="{{ course.course_name }}"> {{ course.course_name }} </label>
+        </div>
     {% endfor %}
-    <br><br>
-    <label> Maximum Time: <input type="number" name="time" min="1" max="1500"></label>
+    <br>
+    <label> Search By Maximum Time: <input type="number" name="time" min="1" max="1500"></label>
     <br><br>
     <label><input type="radio" name="search-term" value="any" checked> Any Terms </label>
     <label><input type="radio" name="search-term" value="all"> All Terms </label>
@@ -26,5 +41,13 @@
     <label><input type="reset" value="Reset"></label>
     <label><input type="submit" value="Search"></label>
 </form>
+
+<script>
+    function showDetails(evt) {
+        $(this).nextUntil('label').toggle();
+    }
+    
+    $('.glyphicon').on('click', showDetails);
+</script>
 
 {% endblock %}

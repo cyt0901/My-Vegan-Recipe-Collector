@@ -16,7 +16,7 @@
                     </form>
                 </h4>
             {% endif %}
-            Source: <a href="{{ recipe.src_url }}">{{ recipe.websites.site_name }}</a><br>
+            Source: <a href="{{ recipe.src_url }}" target="_blank">{{ recipe.websites.site_name }}</a><br>
             Total Time: {{ recipe.time_in_min}} minutes<br>
             Course(s): 
             {% for course in recipe.courses[:-1] %}
@@ -67,7 +67,7 @@
                     </td>
                     <td id="inglink{{i}}">
                         {% if ingredients[i].link %}
-                            <a href="{{ ingredients[i].link }}">{{ ingredients[i].original_string }}</a>
+                            <a href="{{ ingredients[i].link }}" target="_blank">{{ ingredients[i].original_string }}</a>
                         {% else %}
                             {{ ingredients[i].original_string }}
                         {% endif %}
@@ -112,7 +112,7 @@
             $('#us'+i).html(usAmount)
             $('#met'+i).html(metAmount)
             if (newResults[i].extlink) {
-                $('#inglink'+i).html('<a href="' + extlink + '">' + ingredient + '</a>')
+                $('#inglink'+i).html('<a href="' + extlink + '" target="_blank">' + ingredient + '</a>')
             } else {
                 $('#inglink'+i).html(ingredient)
             }
@@ -125,9 +125,6 @@
             "serving": $('#serving').val(),
             "recipe_id": $('#recipe_id').val()
         };
-        
-        console.log(info.serving);
-        console.log(info.recipe_name);
         $.get('/show_conversion.json', info, replaceNumbers);
     }
 
