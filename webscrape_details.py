@@ -8,6 +8,7 @@ def get_img_url(soup):
 
     # Find recipe's img url
     recipe_img = soup.find("div", class_="ERSTopRight").img["src"]
+    print recipe_img
 
     return recipe_img
 
@@ -192,7 +193,6 @@ def get_ingredients(soup):
         else:
             stripped_ingredient = ing[0]
 
-
         # # add all info to ingredient_info dictionary
         ingredient_info[n] = {}
         if metrics_measures:
@@ -212,12 +212,22 @@ def get_all_recipe_info(url):
 
     open_url = urlopen(url)
     read_url = open_url.read()
-
+    print "\n\n\n\nreadurl!!!!!!!!"
+    print open_url
+    print "\n"
+    print read_url
+    print "\n\n\n\n"
     # Specify a filter to parse html doc with. To be used as arg when using BeautifulSoup.
     only_recipe = SoupStrainer(class_="easyrecipe")
+    print "\n\n\n\nonly_recipe!!!!!!!!"
+    print only_recipe
+    print "\n\n\n\n"
 
     # Parse only the recipe portion of webpage.
     soup = (BeautifulSoup(read_url, "html.parser", parse_only=only_recipe))
+    print "\n\n\n\nSOUP!!!!!!!!"
+    print soup
+    print "\n\n\n\n"
 
     all_info = {}
 
@@ -228,4 +238,3 @@ def get_all_recipe_info(url):
     all_info['ingredients'] = get_ingredients(soup)
 
     return all_info
-

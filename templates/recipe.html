@@ -19,9 +19,11 @@
             Source: <a href="{{ recipe.src_url }}" target="_blank">{{ recipe.websites.site_name }}</a><br>
             Total Time: {{ recipe.time_in_min}} minutes<br>
             Course(s): 
-            {% for course in recipe.courses[:-1] %}
-                {{ course.course_name }},
-            {% endfor %}
+            {% if recipe.courses|length > 1 %}
+                {% for course in recipe.courses[:-1] %}
+                    {{ course.course_name }},
+                {% endfor %}
+            {% endif %}
             {{ recipe.courses[-1].course_name }}<br>
             <form action='/show_conversion.json' id="conversion">
                 <input type="hidden" name="recipe_id" id="recipe_id" value="{{ recipe.recipe_id }}">

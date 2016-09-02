@@ -26,7 +26,7 @@ app.jinja_env.undefined = StrictUndefined
 def index():
     """Homepage."""
 
-    return render_template("home.html")
+    return render_template("index.html")
 
 
 @app.route('/register')
@@ -36,8 +36,6 @@ def register_form():
     if not session.get("user_id"):
         return render_template("register_form.html")
 
-    # If a user is already logged in
-    flash("You are already logged in")
     return redirect("/")
 
 
@@ -63,10 +61,6 @@ def register_process():
 
         return redirect("/login")
 
-    # If a user is already logged in
-    flash("You are already logged in")
-    return redirect("/")
-
 
 @app.route('/login')
 def login_form():
@@ -74,10 +68,6 @@ def login_form():
 
     if not session.get("user_id"):
         return render_template("login_form.html")
-    else:
-        # If a user is already logged in
-        flash("You are already logged in")
-        return redirect("/")
 
 
 @app.route('/login', methods=['POST'])
@@ -106,8 +96,6 @@ def login_process():
         session["username"] = user.username
 
         flash("Logged in")
-    else:
-        flash("You are already logged in")
 
     return redirect("/profile")
 
@@ -141,8 +129,6 @@ def show_profile():
         return render_template("profile.html",
                                user=user,
                                label_recipes=label_recipes)
-    else:
-        return redirect("/")
 
 
 @app.route('/upload', methods=['POST'])
@@ -165,6 +151,8 @@ def upload_img():
         user.profile_img = filename
 
         db.session.commit()
+
+        flash("Upload successful.")
     else:
         flash("Only the following formats allowed: .png, .jpg, .jpeg")
 
@@ -192,72 +180,13 @@ def show_search_results():
     max_time = request.args.get("time")
     search_term = request.args.get("search-term")
 
+
     search_parameters = filter(None, [search_term] + all_ingredients + all_courses + ["< " + max_time + " min"])
 
-    # no other search values except for ANY or ALL search_term
-    if len(search_parameters) == 2 and not max_time:
-        find_recipes = Recipe.query.all()
-        search_parameters = search_parameters[:-1]
-
-    recipe_count = {}
-
-    # MATCH INGREDIENTS
-    if all_ingredients:
-        find_ingredients = Ingredient.query.filter(Ingredient.ingredient_name.in_(all_ingredients)).all()
-
-        for ingredient in find_ingredients:
-            # for ANY ingredients
-            find_recipes = ingredient.recipes
-            # create a counter with a dictionary
-            for recipe in find_recipes:
-                recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
-
-        # for ALL ingredients
-        if search_term == "all":
-            for item, count in recipe_count.items():
-                # if the count does not match the length of the ingredients chosen, remove that key/value pair from the dictionary
-                if count != len(all_ingredients):
-                    del recipe_count[item]
-
-        # list of all recipe objects for ANY or ALL ingredients
-        find_recipes = recipe_count.keys()
-
-    # MATCH COURSES
-    if all_courses:
-        find_courses = Course.query.filter(Course.course_name.in_(all_courses)).all()
-
-        course_count = {}
-
-        for course in find_courses:
-            find_courses = course.recipes
-            for recipe in find_courses:
-                course_count[recipe] = course_count.get(recipe, 0) + 1
-
-        # for ALL courses
-        if search_term == "all":
-            for item, count in course_count.items():
-                if count != len(all_courses):
-                    del course_count[item]
-
-            find_recipes = course_count.keys()
-
-        # for ANY courses
-        else:
-            for item, count in course_count.items():
-                recipe_count[item] = recipe_count.get(item, 0) + 1
-            find_recipes = recipe_count.keys()
-
-    # MATCH TIME
-    if max_time:
-        find_time = Recipe.query.filter(Recipe.time_in_min < max_time).all()
-
-        for recipe in find_time:
-            recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
-
-        find_recipes = recipe_count.keys()
+    matching_recipes = find_matching_recipes(search_parameters=search_parameters, search_term=search_term, ingredients=all_ingredients, courses=all_courses, time=max_time)
 
     return render_template("results.html",
-                           find_recipes=find_recipes,
+                           matching_recipes=matching_recipes,
                            search_parameters=search_parameters)
 
 
@@ -297,18 +226,24 @@ def save_recipe_to_box():
         recipe_id = request.form.get("recipe-id")
         user_id = session['user_id']
 
-        if label_name:
+        if label_name and new_label_name:
+            flash("Choose only one field.")
+            return redirect("/save_recipe/" + str(recipe_id))
+        elif label_name:
             box_id = Box.query.filter_by(user_id=user_id, label_name=label_name).first().box_id
-        else:
+        elif new_label_name:
             box = Box(user_id=user_id,
                       label_name=new_label_name)
             db.session.add(box)
             db.session.commit()
 
             box_id = Box.query.filter_by(user_id=user_id, label_name=new_label_name).first().box_id
+        else:
+            flash("Choose an existing label or create a new label.")
+            return redirect("/save_recipe/" + str(recipe_id))
 
         if RecipeBox.query.filter_by(box_id=box_id, recipe_id=recipe_id).all():
-            flash("This recipe already exists in the selected recipe box.")
+            flash("This recipe already exists in the selected label category.")
             return redirect('/save_recipe/' + str(recipe_id))
         else:
             recipebox = RecipeBox(recipe_id=recipe_id,
@@ -321,19 +256,9 @@ def save_recipe_to_box():
 
 @app.route('/my_recipes')
 def show_recipe_box():
-    """Show the user recipe box and labels"""
+    """Show visualization of user recipe box with labels and recipes."""
 
-    user_id = session['user_id']
-    boxes = Box.query.filter_by(user_id=user_id).all()
-
-    label_recipes = {}
-
-    for box in boxes:
-        label_name = box.label_name
-        label_recipes[label_name] = label_recipes.get(label_name, []) + box.recipes
-
-    return render_template("my_recipes.html",
-                           label_recipes=label_recipes)
+    return render_template("my_recipes.html")
 
 
 @app.route('/settings', methods=["POST"])
@@ -349,14 +274,20 @@ def update_settings():
 
         user = User.query.filter_by(user_id=user_id).first()
 
-        if username:
-            user.username = username
-        if password:
-            user.password = bcrypt.hashpw(password, bcrypt.gensalt())
+        if username or password:
+            if username:
+                user.username = username
+            if password:
+                user.password = bcrypt.hashpw(password, bcrypt.gensalt())
 
-        db.session.commit()
+            db.session.commit()
 
-        flash("Your information has been updated")
+            flash("Your information has been updated.")
+        else:
+            flash("No information to update.")
+
+        session["username"] = user.username
+
         return redirect("/profile")
 
 
@@ -369,8 +300,33 @@ def show_conversion():
 
     recipe = Recipe.query.filter_by(recipe_id=recipe_id).first()
     orig_serving = recipe.servings[0].serving_size
-
     conversion_amount = float(new_serving) / orig_serving
+
+    new_ingredients = convert_ingredients(recipe, conversion_amount)
+
+    return json.dumps(new_ingredients)
+
+
+@app.route('/my_recipes.json')
+def get_my_recipes():
+    """Returns json data for my_recipes"""
+
+    user_id = session["user_id"]
+    boxes = Box.query.filter_by(user_id=user_id).all()
+
+    data = get_my_recipes_data(boxes)
+
+    return json.dumps(data)
+
+
+######### HELPER FUNCTIONS ####################################################
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
+
+
+def convert_ingredients(recipe, conversion_amount):
+    """Return converted ingredient measurements."""
 
     all_ingredients = []
     # for each ingredient in recipe
@@ -450,16 +406,13 @@ def show_conversion():
 
         all_ingredients.append(ingredient_info)
 
-    return json.dumps(all_ingredients)
+    return all_ingredients
 
 
-@app.route('/my_recipes.json')
-def get_my_recipes():
-    """Returns json data for my_recipes"""
+def get_my_recipes_data(boxes):
+    """Return saved recipes, labels as list of dictionaries, for d3 visual."""
 
     data = [{"name": "My Recipes", "parent": None, "value": 6, "img": "/static/img/icon9.png"}]
-    user_id = session["user_id"]
-    boxes = Box.query.filter_by(user_id=user_id).all()
 
     for box in boxes:
         each_box = dict(zip(["name", "parent", "value", "img"], [box.label_name, "My Recipes", 4, "/static/img/leaf0.png"]))
@@ -468,13 +421,75 @@ def get_my_recipes():
             each_recipe = dict(zip(["name", "parent", "value", "img", "url"], [recipe.recipe_name, box.label_name, 3.5, recipe.img_url, "/recipe/" + str(recipe.recipe_id)]))
             data.append(each_recipe)
 
-    return json.dumps(data)
+    return data
 
 
-######### HELPER FUNCTIONS ####################################################
+def find_matching_recipes(search_parameters, search_term, ingredients, courses, time):
+    """Return list of recipes that match the selected search parameters."""
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
+    # no other search values except for ANY or ALL search_term
+    if len(search_parameters) == 2 and not time:
+        find_recipes = Recipe.query.all()
+        search_parameters = search_parameters[:-1]
+
+    recipe_count = {}
+
+    # MATCH INGREDIENTS
+    if ingredients:
+        find_ingredients = Ingredient.query.filter(Ingredient.ingredient_name.in_(ingredients)).all()
+
+        for ingredient in find_ingredients:
+            # for ANY ingredients
+            find_recipes = ingredient.recipes
+            # create a counter with a dictionary
+            for recipe in find_recipes:
+                recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
+
+        # for ALL ingredients
+        if search_term == "all":
+            for item, count in recipe_count.items():
+                # if the count does not match the length of the ingredients chosen, remove that key/value pair from the dictionary
+                if count != len(ingredients):
+                    del recipe_count[item]
+
+        # list of all recipe objects for ANY or ALL ingredients
+        find_recipes = recipe_count.keys()
+
+    # MATCH COURSES
+    if courses:
+        find_courses = Course.query.filter(Course.course_name.in_(courses)).all()
+
+        course_count = {}
+
+        for course in find_courses:
+            find_courses = course.recipes
+            for recipe in find_courses:
+                course_count[recipe] = course_count.get(recipe, 0) + 1
+
+        # for ALL courses
+        if search_term == "all":
+            for item, count in course_count.items():
+                if count != len(courses):
+                    del course_count[item]
+
+            find_recipes = course_count.keys()
+
+        # for ANY courses
+        else:
+            for item, count in course_count.items():
+                recipe_count[item] = recipe_count.get(item, 0) + 1
+            find_recipes = recipe_count.keys()
+
+    # MATCH TIME
+    if time:
+        find_time = Recipe.query.filter(Recipe.time_in_min < time).all()
+
+        for recipe in find_time:
+            recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
+
+        find_recipes = recipe_count.keys()
+
+    return find_recipes
 
 
 

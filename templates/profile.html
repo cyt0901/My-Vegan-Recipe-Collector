@@ -25,13 +25,17 @@
             <div class="col-xs-12 col-md-8">
                 <h4><a href="/my_recipes">My Recipes</a></h4>
                 <button id="edit">Edit My Recipes</button><br><br>
-                {% for label, recipe in label_recipes.items() %}
-                    <h5>{{ label }}</h5><form id="editForm"><input class="to-toggle" type="text" id="label" hidden></form>
-                    {% for r in recipe %}
-                        <a href="/recipe/{{ r.recipe_id }}"> {{ r.recipe_name }}</a><br>
+                <form id="editForm">
+                    {% for label, recipe in label_recipes.items() %}
+                        <h5>{{ label }}&nbsp<input class="to-toggle" type="text" id="label" hidden></h5>
+                        {% for r in recipe %}
+                            <input type="hidden" name="label" value="{{ label }}">
+                            <input type="hidden" name="recipe" value="{{ r.recipe_id }}">
+                            <span class="removeIcon" hidden><span class="glyphicon glyphicon-remove" value="{{ r.recipe_id }}"></span></span><a href="/recipe/{{ r.recipe_id }}"> {{ r.recipe_name }}</a><br>
+                        {% endfor %}
+                        <br>
                     {% endfor %}
-                    <br><br>
-                {% endfor %}
+                </form>
             </div>                     
         </div>
         <br>
@@ -59,16 +63,20 @@
     }
     $('#update').on('click', showDetails);
 
-    function toggleHidden(evt) {
+    function showHidden(evt) {
         if ($('.to-toggle').attr("hidden")) {
             $(this).html("Save Changes");
             $('.to-toggle').attr("hidden", null);
+            $('.removeIcon').attr("hidden", null);
         } else {
             $('#editForm').submit();
         }
-
     }
-    $('#edit').on('click', toggleHidden);
+    $('#edit').on('click', showHidden);
+
+    $('.glyphicon-remove').on('click', function(evt) {
+        var recipeId = $(this).value;
+    })
 
 </script>
 

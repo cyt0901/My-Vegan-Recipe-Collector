@@ -25,7 +25,7 @@
     </div>
     <br> 
     <div class="row">  
-        {% for recipe in find_recipes %}
+        {% for recipe in matching_recipes %}
             <div class="col-xs-12 col-md-4 col-lg-3">
                 <center><h6><a href="/recipe/{{ recipe.recipe_id }}">{{ recipe.recipe_name }}</a></h6></center>
                 <center><a href="/recipe/{{ recipe.recipe_id }}"><img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive img-thumbnail"></a></center>

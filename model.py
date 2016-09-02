@@ -472,18 +472,20 @@ class RecipeCourse(db.Model):
                                                              self.course_id)
 
 
-##############################################################################
-# Helper functions
-def connect_to_db(app):
+#####   HELPER FUNCTIONS  ######################################################
+
+def connect_to_db(app, db_uri='postgresql:///testrecipes'):
     """Connect the database to our Flask app."""
 
     # Configure to use our PostgreSQL database
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///recipes'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testrecipes'
+    # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testrecipes'
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testing'
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     db.app = app
     db.init_app(app)
 
+################################################################################
 
 if __name__ == "__main__":
     # As a convenience, if we run this module interactively, it will leave
