@@ -54,8 +54,8 @@
                             {% endfor %}
                             {{ ingredients[i].usamounts[-1].us_amount}}
                         {% endif %}
-                        {% if ingredients[i].usmeasurements %}
-                            {{ ingredients[i].usmeasurements[0].us_unit }}
+                        {% if ingredients[i].usunits %}
+                            {{ ingredients[i].usunits[0].us_unit }}
                         {% endif %}                            
                     </td>                    
                     <td id="met{{i}}">
@@ -64,7 +64,7 @@
                                 {{ amount.metric_amount }}-
                             {% endfor %}
                             {{ ingredients[i].metricamounts[-1].metric_amount }}
-                            {{ ingredients[i].metricmeasurements[0].metric_unit }})
+                            {{ ingredients[i].metricunits[0].metric_unit }})
                         {% endif %}
                     </td>
                     <td id="inglink{{i}}">
@@ -102,7 +102,6 @@
 </div>
 <script>
     function replaceNumbers(results) {
-        console.log(results);
         var newResults = JSON.parse(results);
 
         for (var i=0; i<newResults.length; i++) {

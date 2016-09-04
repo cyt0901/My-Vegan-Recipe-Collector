@@ -1,6 +1,6 @@
 """Utility file to seed database with data from api and through webscraping"""
 
-from model import User, Box, RecipeBox, Recipe, Website, Serving, Ingredient, USMeasurement, MetricMeasurement, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse
+from model import User, Box, RecipeBox, Recipe, Website, Serving, Ingredient, USUnit, MetricUnit, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse
 
 from model import connect_to_db, db
 from server import app
@@ -136,8 +136,8 @@ def load_measurements(scrape_ingredients):
         if ingredient.get('metrics_measures'):
             metric_unit = ingredient['metrics_measures']['metric_unit']
             # check if the metric unit already exists in database
-            if not MetricMeasurement.query.filter_by(metric_unit=metric_unit).all():
-                metricmeasure = MetricMeasurement(metric_unit=metric_unit)
+            if not MetricUnit.query.filter_by(metric_unit=metric_unit).all():
+                metricmeasure = MetricUnit(metric_unit=metric_unit)
                 db.session.add(metricmeasure)
             for num in ingredient['metrics_measures']['metric_amount']:
                 # check if the metric amount already exists in database
@@ -150,8 +150,8 @@ def load_measurements(scrape_ingredients):
             if measure.get('us_unit'):
                 us_unit = measure['us_unit']
                 # check if us unit already exists in database
-                if not USMeasurement.query.filter_by(us_unit=us_unit).all():
-                    usmeasure = USMeasurement(us_unit=us_unit)
+                if not USUnit.query.filter_by(us_unit=us_unit).all():
+                    usmeasure = USUnit(us_unit=us_unit)
                     db.session.add(usmeasure)
             if measure.get('us_amount'):
                 for num in measure['us_amount']:
@@ -292,12 +292,12 @@ def load_ingredient_measures(scrape_ingredients, all_ingredients, recipe_name):
                 ingredient_name = ingredient['name']
 
         if scrape_ingredients[i].get('metrics_measures'):
-            metric_measure_id = MetricMeasurement.query.filter_by(metric_unit=scrape_ingredients[i]['metrics_measures']['metric_unit']).first().metric_measure_id
+            metric_unit_id = MetricUnit.query.filter_by(metric_unit=scrape_ingredients[i]['metrics_measures']['metric_unit']).first().metric_unit_id
             # for when only 1 value in metric amount list
             metric_amount_id = MetricAmount.query.filter_by(metric_amount=scrape_ingredients[i]['metrics_measures']['metric_amount'][0]).first().metric_amount_id
             # add to database
             metric = MetricIngredientMeasure(recipeingredient_id=recipeingredient_id,
-                                             metric_measure_id=metric_measure_id,
+                                             metric_unit_id=metric_unit_id,
                                              metric_amount_id=metric_amount_id)
             db.session.add(metric)
 
@@ -305,19 +305,19 @@ def load_ingredient_measures(scrape_ingredients, all_ingredients, recipe_name):
                 metric_amount_id2 = MetricAmount.query.filter_by(metric_amount=scrape_ingredients[i]['metrics_measures']['metric_amount'][1]).first().metric_amount_id
                 # add to database
                 metric2 = MetricIngredientMeasure(recipeingredient_id=recipeingredient_id,
-                                          metric_measure_id=metric_measure_id,
+                                          metric_unit_id=metric_unit_id,
                                           metric_amount_id=metric_amount_id2)
                 db.session.add(metric2)
 
         if scrape_ingredients[i].get('us_measures'):
             # starting values for variables
-            us_measure_id = None
+            us_unit_id = None
             us_amount_id = None
             us_amount_id2 = None
 
             # find real values for variables
             if scrape_ingredients[i]['us_measures'].get('us_unit'):
-                us_measure_id = USMeasurement.query.filter_by(us_unit=scrape_ingredients[i]['us_measures']['us_unit']).first().us_measure_id
+                us_unit_id = USUnit.query.filter_by(us_unit=scrape_ingredients[i]['us_measures']['us_unit']).first().us_unit_id
 
             if scrape_ingredients[i]['us_measures'].get('us_amount'):
                 us_amount_id = USAmount.query.filter_by(us_amount=scrape_ingredients[i]['us_measures']['us_amount'][0]).first().us_amount_id
@@ -326,26 +326,26 @@ def load_ingredient_measures(scrape_ingredients, all_ingredients, recipe_name):
 
             # add data to usingredientmeasures table
             # if us_measure_id available
-            if us_measure_id:
+            if us_unit_id:
                 # both us_measure_id and us_amount_id available
                 if us_amount_id:
                     usmeasure = USIngredientMeasure(recipeingredient_id=recipeingredient_id,
-                                                    us_measure_id=us_measure_id,
+                                                    us_unit_id=us_unit_id,
                                                     us_amount_id=us_amount_id)
                     db.session.add(usmeasure)
                     # both us_measure_id and us_amount_id2 available
                     if us_amount_id2:
                         usmeasure2 = USIngredientMeasure(recipeingredient_id=recipeingredient_id,
-                                                         us_measure_id=us_measure_id,
+                                                         us_unit_id=us_unit_id,
                                                          us_amount_id=us_amount_id2)
                         db.session.add(usmeasure2)
                 # only us_measure_id available
                 else:
                     usmeasure = USIngredientMeasure(recipeingredient_id=recipeingredient_id,
-                                                    us_measure_id=us_measure_id)
+                                                    us_unit_id=us_unit_id)
                     db.session.add(usmeasure)
             # only us_amount_id available
-            elif us_amount_id and not us_measure_id:
+            elif us_amount_id and not us_unit_id:
                 usmeasure = USIngredientMeasure(recipeingredient_id=recipeingredient_id,
                                                 us_amount_id=us_amount_id)
                 db.session.add(usmeasure)
@@ -535,7 +535,7 @@ def example_user_boxes():
 if __name__ == "__main__":
     connect_to_db(app)
 
-    # In case tables haven't been created, create them
+    db.drop_all()
     db.create_all()
 
     # test-case urls
@@ -545,11 +545,15 @@ if __name__ == "__main__":
     #         "http://minimalistbaker.com/watermelon-sashimi/",
     #         "http://minimalistbaker.com/vegan-milky-way/"]
 
-    url = open("data/all_recipe_urls.txt").read()
+    example_recipes()
+    example_user_boxes()
 
-    for url in open("data/all_recipe_urls.txt"):
-        url = url.rstrip()
-        all_info = get_information(url)
-        add_recipe_data(all_info)
+    ######## ALL DATA ##############
+    # url = open("data/all_recipe_urls.txt").read()
 
-    add_users_boxes()
+    # for url in open("data/all_recipe_urls.txt"):
+    #     url = url.rstrip()
+    #     all_info = get_information(url)
+    #     add_recipe_data(all_info)
+
+    # add_users_boxes()

@@ -2,10 +2,10 @@
 
 import os
 from jinja2 import StrictUndefined
-from flask import Flask, render_template, redirect, flash, session, request, url_for, send_from_directory, jsonify
+from flask import Flask, render_template, redirect, flash, session, request, url_for, send_from_directory, jsonify, Markup
 from flask_debugtoolbar import DebugToolbarExtension
 from model import connect_to_db, db
-from model import User, Recipe, Website, Serving, Ingredient, USMeasurement, MetricMeasurement, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
+from model import User, Recipe, Website, Serving, Ingredient, USUnit, MetricUnit, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
 from fractions import Fraction
 import json
 import bcrypt
@@ -118,17 +118,11 @@ def show_profile():
 
     if session.get("user_id"):
         user = User.query.filter_by(user_id=session["user_id"]).first()
-        boxes = Box.query.filter_by(user_id=session["user_id"]).all()
-
-        label_recipes = {}
-
-        for box in boxes:
-            label_name = box.label_name
-            label_recipes[label_name] = label_recipes.get(label_name, []) + box.recipes
+        boxes = user.boxes
 
         return render_template("profile.html",
                                user=user,
-                               label_recipes=label_recipes)
+                               boxes=boxes)
 
 
 @app.route('/upload', methods=['POST'])
@@ -211,7 +205,7 @@ def show_add_recipe(recipe_id):
         user_id = session['user_id']
         boxes = Box.query.filter_by(user_id=user_id).all()
 
-        return render_template("add_to_box.html",
+        return render_template("save_recipe.html",
                                recipe=recipe,
                                boxes=boxes)
 
@@ -223,6 +217,7 @@ def save_recipe_to_box():
     if session.get("user_id"):
         label_name = request.form.get("box-label")
         new_label_name = request.form.get("new-label")
+        notes = request.form.get("notes")
         recipe_id = request.form.get("recipe-id")
         user_id = session['user_id']
 
@@ -247,7 +242,8 @@ def save_recipe_to_box():
             return redirect('/save_recipe/' + str(recipe_id))
         else:
             recipebox = RecipeBox(recipe_id=recipe_id,
-                                  box_id=box_id)
+                                  box_id=box_id,
+                                  recipe_notes=notes)
             db.session.add(recipebox)
             db.session.commit()
 
@@ -289,6 +285,44 @@ def update_settings():
         session["username"] = user.username
 
         return redirect("/profile")
+
+
+@app.route('/update_my_recipes')
+def update_recipe_box():
+    """Update database with new info for user's recipe boxes."""
+
+    box_id = int(request.args.get("box_id"))
+    recipe_id = int(request.args.get("recipe_id"))
+    delete = request.args.get("delete")
+
+    if delete == "Y":
+        notes = request.args.get("notes")
+        recipebox = RecipeBox.query.filter_by(box_id=box_id, recipe_id=recipe_id).first()
+        db.session.delete(recipebox)
+        db.session.commit()
+    else:
+        if recipe_id != (-1):
+            recipebox = RecipeBox.query.filter_by(box_id=box_id, recipe_id=recipe_id).first()
+            recipebox.recipe_notes = notes
+            db.session.commit()
+        else:
+            label_name = request.args.get("label_name")
+            box = Box.query.filter_by(box_id=box_id).first()
+            box.label_name = label_name
+            db.session.commit()
+
+    return "Update sucessful"
+
+
+@app.route('/preview.html')
+def update_preview():
+    """Send updated preview of users recipe boxes to front-end."""
+
+    user_id = session["user_id"]
+    boxes = User.query.filter_by(user_id=user_id).first().boxes
+
+    return render_template("preview.html",
+                           boxes=boxes)
 
 
 @app.route('/show_conversion.json')
@@ -358,17 +392,17 @@ def convert_ingredients(recipe, conversion_amount):
             # check length of amounts list
             if len(amounts) > 1:
                 amounts = amounts[0] + " - " + amounts[1]
-                # check if usmeasurements exists; if so, add to string
-                if recipe.recipesingredients[i].usmeasurements:
-                    amounts = amounts + " " + recipe.recipesingredients[i].usmeasurements[0].us_unit
+                # check if usunits exists; if so, add to string
+                if recipe.recipesingredients[i].usunits:
+                    amounts = amounts + " " + recipe.recipesingredients[i].usunits[0].us_unit
             else:
                 amounts = amounts[0]
-                # check if usmeasurements exists; if so, add to string
-                if recipe.recipesingredients[i].usmeasurements:
-                    amounts = amounts + " " + recipe.recipesingredients[i].usmeasurements[0].us_unit
+                # check if usunits exists; if so, add to string
+                if recipe.recipesingredients[i].usunits:
+                    amounts = amounts + " " + recipe.recipesingredients[i].usunits[0].us_unit
 
-        # check if only usmeasurements exists, like 'pinch'
-        elif recipe.recipesingredients[i].usmeasurements and not recipe.recipesingredients[i].usamounts:
+        # check if only usunits exists, like 'pinch'
+        elif recipe.recipesingredients[i].usunits and not recipe.recipesingredients[i].usamounts:
             if conversion_amount < 0.5:
                 amounts = "small smidgen"
             elif conversion_amount == 0.5:
@@ -376,9 +410,9 @@ def convert_ingredients(recipe, conversion_amount):
             elif 0.5 < conversion_amount < 1.0:
                 amounts = "small pinch"
             elif conversion_amount == 1.0:
-                amounts = recipe.recipesingredients[i].usmeasurements[0].us_unit
+                amounts = recipe.recipesingredients[i].usunits[0].us_unit
             elif conversion_amount > 1.0:
-                amounts = str(int(round(conversion_amount))) + " " + recipe.recipesingredients[i].usmeasurements[0].us_unit + "es"
+                amounts = str(int(round(conversion_amount))) + " " + recipe.recipesingredients[i].usunits[0].us_unit + "es"
 
         # check if metricamounts exists
         if recipe.recipesingredients[i].metricamounts:
@@ -388,9 +422,9 @@ def convert_ingredients(recipe, conversion_amount):
                 metrics.append(new_metric)
             # check length of metrics list
             if len(metrics) > 1:
-                metrics = "(" + metrics[0] + " - " + metrics[1] + " " + recipe.recipesingredients[i].metricmeasurements[0].metric_unit + ")"
+                metrics = "(" + metrics[0] + " - " + metrics[1] + " " + recipe.recipesingredients[i].metricunits[0].metric_unit + ")"
             else:
-                metrics = "(" + metrics[0] + " " + recipe.recipesingredients[i].metricmeasurements[0].metric_unit + ")"
+                metrics = "(" + metrics[0] + " " + recipe.recipesingredients[i].metricunits[0].metric_unit + ")"
 
         # add amounts to ingredient_info
         ingredient_info['us_amount'] = amounts

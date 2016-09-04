@@ -2,6 +2,7 @@ import unittest
 
 from server import app
 from model import db, connect_to_db
+from model import User, Recipe, Website, Serving, Ingredient, USUnit, MetricUnit, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
 from seed import example_recipes, example_user_boxes, load_users
 from model import User
 from StringIO import StringIO
@@ -136,10 +137,10 @@ class DatabaseIntegrationTests(unittest.TestCase):
         self.assertIn("Dessert", result.data)
         self.assertNotIn("Save Recipe", result.data)
 
-    def test_conversion(self):
-        """Tests ingredient conversions."""
+    # def test_conversion(self):
+    #     """Tests ingredient conversions."""
 
-        pass
+    #     pass
 
 
 class DatabaseLoginIntegrationTests(unittest.TestCase):
@@ -404,42 +405,78 @@ class DatabaseUserIntegrationTests(unittest.TestCase):
         self.assertEqual(recipe_data["name"], "Sun-Dried Tomato Chickpea Burgers")
 
 
-class ServerUnitTests(unittest.TestCase):
-    """Tests single functions."""
+class ModelIntegrationTests(unittest.TestCase):
+    """Tests model instantiations."""
 
-    def test_function(self):
-        pass
+    def setUp(self):
+        self.client = app.test_client()
+        app.config["TESTING"] = True
+        app.config["SECRET_KEY"] = "key"
+
+        connect_to_db(app, db_uri="postgresql:///testdb")
+
+        db.create_all()
+
+    def tearDown(self):
+        db.session.close()
+        db.drop_all()
+
+    def test_User(self):
+        """Tests User model instantiation."""
+
+        add_user = User(username="TestUser", password="**password**")
+        db.session.add(add_user)
+
+        user = User.query.filter(User.username == "TestUser").first()
+
+        self.assertEqual(user.password, "**password**")
+        self.assertEqual(user.profile_img, None)
+        self.assertEqual(user.__repr__(), "<User user_id=1 username=TestUser>")
+
+    def test_Box(self):
+        """Tests Box model instantiation."""
+
+        add_user = User(username="TestUser", password="**password**")
+        db.session.add(add_user)
+
+        add_box = Box(user_id=1, label_name="To Try")
+        db.session.add(add_box)
+
+        box = Box.query.filter(Box.label_name == "To Try").first()
+
+        self.assertEqual(box.user_id, 1)
+        self.assertEqual(box.__repr__(), "<Box box_id=1 user_id=1>")
 
 
-class ModelUnitTests(unittest.TestCase):
-    """Tests single functions."""
+# class ServerUnitTests(unittest.TestCase):
+#     """Tests single functions."""
 
-    def test_function(self):
-        pass
-
-
-class SeedUnitTests(unittest.TestCase):
-    """Tests single functions."""
-
-    def test_function(self):
-        pass
+#     def test_function(self):
+#         pass
 
 
-class WebScrapeUnitTests(unittest.TestCase):
-    """Tests single functions."""
+# class SeedUnitTests(unittest.TestCase):
+#     """Tests single functions."""
 
-    def get_img_url(self):
-        for row in open("data/webscrape.txt"):
-            row = row.rstrip()
-            img_url = soup.find("div", class_="ERSTopRight").img["src"]
-
-            self.assertEqual(get_img_url(aljh))
+#     def test_function(self):
+#         pass
 
 
+# class WebScrapeUnitTests(unittest.TestCase):
+#     """Tests single functions."""
+
+#     def get_img_url(self):
+#         for row in open("data/webscrape.txt"):
+#             row = row.rstrip()
+#             img_url = soup.find("div", class_="ERSTopRight").img["src"]
+
+#             self.assertEqual(get_img_url(aljh))
 
 
 
-    recipe_img = soup.find("div", class_="ERSTopRight").img["src"]
+
+
+    # recipe_img = soup.find("div", class_="ERSTopRight").img["src"]
 ###############################################################################
 
 if __name__ == "__main__":

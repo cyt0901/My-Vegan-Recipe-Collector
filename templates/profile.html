@@ -25,17 +25,10 @@
             <div class="col-xs-12 col-md-8">
                 <h4><a href="/my_recipes">My Recipes</a></h4>
                 <button id="edit">Edit My Recipes</button><br><br>
-                <form id="editForm">
-                    {% for label, recipe in label_recipes.items() %}
-                        <h5>{{ label }}&nbsp<input class="to-toggle" type="text" id="label" hidden></h5>
-                        {% for r in recipe %}
-                            <input type="hidden" name="label" value="{{ label }}">
-                            <input type="hidden" name="recipe" value="{{ r.recipe_id }}">
-                            <span class="removeIcon" hidden><span class="glyphicon glyphicon-remove" value="{{ r.recipe_id }}"></span></span><a href="/recipe/{{ r.recipe_id }}"> {{ r.recipe_name }}</a><br>
-                        {% endfor %}
-                        <br>
-                    {% endfor %}
-                </form>
+                <p class="to-toggle alert" hidden>NOTE: Click icons next to recipe names to delete.</p><br>
+                <div id="preview">
+                {% include 'preview.html' %}
+                </div>
             </div>                     
         </div>
         <br>
@@ -53,31 +46,113 @@
         <div class="row">  
                 <div class="col-xs-12 col-md-4 col-lg-3">
 
+
                 </div>
         </div>  
     </div>
 </div>
+
+
+
+
 <script>
-    function showDetails(evt) {
+
+    $(document).on('click', '#update', function(evt) {
         $(this).nextUntil('div').toggle();
-    }
-    $('#update').on('click', showDetails);
+    });
 
-    function showHidden(evt) {
-        if ($('.to-toggle').attr("hidden")) {
-            $(this).html("Save Changes");
-            $('.to-toggle').attr("hidden", null);
-            $('.removeIcon').attr("hidden", null);
+    $(document).on('click', '#edit', function(evt) {
+        evt.preventDefault();
+        if (this.innerHTML == 'Edit My Recipes') {
+            $('.to-toggle').toggle();
+            $('.edit-notes').show();
+            $(this).html('Cancel');
         } else {
-            $('#editForm').submit();
-        }
-    }
-    $('#edit').on('click', showHidden);
+            $('.to-toggle').toggle();
+            $('.edit-notes').hide();
+            $('.note-section').hide();
+            $('.current-notes').show();
+            $('.save-notes').hide();
+            $('#edit').html('Edit My Recipes');
+        }       
+    });
 
-    $('.glyphicon-remove').on('click', function(evt) {
-        var recipeId = $(this).value;
-    })
+    $(document).on('click', '#save-label', function(evt) {
+        var newLabel = $(this).prev().val();
+        
+        $.data(this.previousElementSibling, "newLabel", newLabel);
+
+        var box_id = $(this).prev().data().box;
+        var label_name = $(this).prev().data().newLabel;
+        var info = {
+            "box_id": box_id,
+            "recipe_id": -1,
+            "delete": "N",
+            "label_name": newLabel
+        }
+
+        console.log(info);
+
+        $.get('/update_my_recipes', info, updateMyRecipes);
+
+    });
+
+    $(document).on('click', '.edit-notes', function(evt) {
+        $(this).toggle();
+        $(this).prev().hide();
+        $(this).next().show();
+        $(this).next().next().show();
+    });
+
+    $(document).on('click', '.save-notes', function(evt) {
+        var newNotes = $(this).prev().val();
+
+        $.data(this.previousElementSibling, "notes", newNotes);
+
+        var rec_id = $(this).prev().data().recipe;
+        var box_id = $(this).prev().data().box;
+        var notes = $(this).prev().data().notes;
+        var info = {
+            "box_id": box_id,
+            "recipe_id": rec_id,
+            "delete": "N",
+            "notes": notes
+        }
+
+        console.log(info);
+
+        $.get('/update_my_recipes', info, updateMyRecipes);
+
+    });
+
+    $(document).on('mouseover', '.glyphicon-remove', function(evt) {
+        $('.alert').css('color', 'red');
+    });
+
+    $(document).on('mouseout', '.glyphicon-remove', function(evt) {
+        $('.alert').css('color', '#333');
+    });
+
+    function updateMyRecipes(results) {
+        $.get('/preview.html', function(results) {
+            $('#preview').html(results);
+        });
+
+        $('#edit').click();
+    };
+
+    $(document).on('click', '.glyphicon-remove', function(evt) {
+        var rec_id = $(this).data().recipe;
+        var box_id = $(this).data().box;
+        var info = {
+            "box_id": box_id,
+            "recipe_id": rec_id,
+            "delete": "Y"
+        };
+
+        $.get('/update_my_recipes', info, updateMyRecipes);
+    });
+
 
 </script>
-
 {% endblock %}
