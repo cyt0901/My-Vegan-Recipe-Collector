@@ -2,52 +2,105 @@
 {% block title%}Search{% endblock %}
 {% block content %}
 
-<h1>Search</h1>
-<!-- filtered searches -->
-<form action="/results" id="search-form">
-    <label>Search By Ingredients</label>
-    <span class="glyphicon glyphicon-menu-down"></span><br>
-    {% for t in all_types %}
-        <div class="expandable">
-            {% if t.type_name ==  "Nut butters, Jams, and Honey" %}
-                Nut butters and Jams
-            {% elif t.type_name == "Milk, Eggs, Other Dairy" %}
-                Dairy Alternatives
-            {% else %}
-                {{ t.type_name }}
-            {% endif %}
-                <span class="glyphicon glyphicon-triangle-bottom"></span>
-                <div class="expandable">
-                    {% for ingredient in t.ingredients %}
-                        <label><input type="checkbox" name="ingredient" value="{{ ingredient.ingredient_name }}"> {{ ingredient.ingredient_name }} </label>
-                    {% endfor %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>Search</h1>
+        </div>
+    </div>
+    <br>
+    <form action="/results" id="searching-form">
+        <div class="row">
+            <div class="col-xs-12">
+                <label>Search By Ingredients</label>
+                <span class="glyphicon glyphicon-menu-down expand-types"></span><br>
+                <p class="clickable expand-ingredients" hidden>Expand All Ingredients</p>
+            </div>
+        </div>
+        <div class="row">
+            {% for t in all_types|sort(attribute='type_name') %}
+                <div class="col-xs-12 col-md-4 expandable indent1 ingredient-type">
+                    {% if t.type_name ==  "Nut butters, Jams, and Honey" %}
+                        Nut butters and Jams
+                    {% elif t.type_name == "Milk, Eggs, Other Dairy" %}
+                        Milk/Dairy Alternatives
+                    {% else %}
+                        {{ t.type_name }}
+                    {% endif %}
+                    <span class="glyphicon glyphicon-triangle-bottom expand-names"></span>
+                    <div class="expandable indent2 ingredient-name">
+                        {% for ingredient in t.ingredients|sort(attribute='ingredient_name') %}
+                            <label><input type="checkbox" name="ingredient" value="{{ ingredient.ingredient_name }}"> {{ ingredient.ingredient_name }} </label><br>
+                        {% endfor %}
+                    </div>
                 </div>
+            {% endfor %}
         </div>
-    {% endfor %}
-    <br>
-    <label>Search By Courses</label>
-    <span class="glyphicon glyphicon-menu-down"></span><br>
-    {% for course in all_courses %}
-        <div class="expandable">
-            <label><input type="checkbox" name="course" value="{{ course.course_name }}"> {{ course.course_name }} </label>
+        <br>
+        <div class="row">
+            <div class="col-xs-12">
+                <label>Search By Courses</label>
+                <span class="glyphicon glyphicon-menu-down expand-courses"></span><br>
+            </div>
         </div>
-    {% endfor %}
-    <br>
-    <label> Search By Maximum Time: <input type="number" name="time" min="1" max="1500"></label>
-    <br><br>
-    <label><input type="radio" name="search-term" value="any" checked> Any Terms </label>
-    <label><input type="radio" name="search-term" value="all"> All Terms </label>
-    <br><br>
-    <label><input type="reset" value="Reset"></label>
-    <label><input type="submit" value="Search"></label>
-</form>
+        <div class="row">
+            {% for course in all_courses|sort(attribute='course_name') %}
+                <div class="col-xs-12 col-md-4 expandable indent1 course-name">
+                    <label><input type="checkbox" name="course" value="{{ course.course_name }}"> {{ course.course_name }} </label>
+                </div>
+            {% endfor %}
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-xs-12">
+                <label> Search By Maximum Time: <input type="number" name="time" min="1" max="1500"></label><br>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-xs-12">
+                <label><input type="radio" name="search-term" value="any" checked>&nbspAny Terms</label>&nbsp&nbsp
+                <label><input type="radio" name="search-term" value="all">&nbspAll Terms</label>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-xs-12">
+                <label><input  class="btn btn-default" type="reset" value="Reset"></label>
+                <label><input class="btn btn-default" type="submit" value="Search"></label>
+            </div>
+        </div>
+    </form> 
+</div>
 
 <script>
-    function showDetails(evt) {
+
+    $('.expand-types').on('click', function(evt) {
+        $('.expand-ingredients').toggle();
+        $('.ingredient-type').toggle();
+        $('.ingredient-name').hide(); 
+        $('.expand-ingredients').html('Expand All Ingredients');        
+    });
+
+    $('.expand-names').on('click', function(evt) {
         $(this).nextUntil('label').toggle();
-    }
-    
-    $('.glyphicon').on('click', showDetails);
+        $('.expand-ingredients').html('Collapse All Ingredients');
+    });
+
+    $('.expand-ingredients').on('click', function(evt) {
+        if ($(this).html() == 'Expand All Ingredients') {
+            $(this).html('Collapse All Ingredients');
+            $('.ingredient-name').show();
+        } else {
+            $(this).html('Expand All Ingredients');
+            $('.ingredient-name').hide();
+        }
+    });
+
+    $('.expand-courses').on('click', function(evt) {
+        $('.course-name').toggle();
+    });    
+
 </script>
 
 {% endblock %}

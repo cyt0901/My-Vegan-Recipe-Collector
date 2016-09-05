@@ -38,13 +38,14 @@ def load_boxes(user_id, label_name):
     db.session.commit()
 
 
-def load_recipeboxes(recipe_id, box_id):
+def load_recipeboxes(recipe_id, box_id, recipe_notes):
     """Load sample recipe boxes."""
 
     print "Recipe Box"
 
     recipebox = RecipeBox(recipe_id=recipe_id,
-                          box_id=box_id)
+                          box_id=box_id,
+                          recipe_notes=recipe_notes)
 
     db.session.add(recipebox)
     db.session.commit()
@@ -469,38 +470,38 @@ def add_users_boxes():
     # users
     load_users('Ada', '12345')
     load_users('Grace', 'grace')
-    load_users('Balloonicorn', 'balloonicorn')
+    load_users('Hackbright', 'hackbright')
 
     # user boxes
-    load_boxes(1, "Sample")
-    load_boxes(1, "Another Label!")
-    load_boxes(2, "Stuff...")
-    load_boxes(1, "Party Food")
-    load_boxes(1, "Next Week Dinner")
+    load_boxes(1, "This Week's Meal Plan")
+    load_boxes(1, "Food To Try Making")
+    load_boxes(2, "Party Recipes")
+    load_boxes(1, "Weekend Party Food")
+    load_boxes(1, "My All-Time Favorites")
 
     # user recipe boxes
-    load_recipeboxes(1, 1)
-    load_recipeboxes(2, 1)
-    load_recipeboxes(3, 1)
-    load_recipeboxes(4, 2)
-    load_recipeboxes(5, 2)
-    load_recipeboxes(6, 3)
-    load_recipeboxes(5, 3)
-    load_recipeboxes(5, 1)
-    load_recipeboxes(6, 1)
-    load_recipeboxes(7, 2)
-    load_recipeboxes(8, 1)
-    load_recipeboxes(9, 2)
-    load_recipeboxes(10, 5)
-    load_recipeboxes(13, 4)
-    load_recipeboxes(20, 5)
-    load_recipeboxes(63, 4)
-    load_recipeboxes(55, 2)
-    load_recipeboxes(28, 4)
-    load_recipeboxes(19, 1)
-    load_recipeboxes(35, 5)
-    load_recipeboxes(70, 2)
-    load_recipeboxes(59, 4)
+    load_recipeboxes(1, 1, "Simple party-pleaser.")
+    load_recipeboxes(2, 1, "Healthy appetizer")
+    load_recipeboxes(3, 1, "Need to buy ingredients")
+    load_recipeboxes(4, 2, "Make some substitutions")
+    load_recipeboxes(5, 2, "Try with different produce...")
+    load_recipeboxes(6, 3, "Adjust for 5 servings")
+    load_recipeboxes(5, 3, "Need 10 servings!")
+    load_recipeboxes(5, 1, "One of my favorites")
+    load_recipeboxes(6, 1, "bff really likes this one!")
+    load_recipeboxes(7, 2, "to take to potluck dinner")
+    load_recipeboxes(8, 1, "Need to practice cooking this.")
+    load_recipeboxes(9, 2, "Made 5 times in the last month.")
+    load_recipeboxes(10, 5, "Add some variation.")
+    load_recipeboxes(13, 4, "Need to add more ingredients.")
+    load_recipeboxes(20, 5, "Make some substitutions...")
+    load_recipeboxes(63, 4, "Simple and easy to make.")
+    load_recipeboxes(55, 2, "Successful at last party.")
+    load_recipeboxes(28, 4, "Planning to take to next gathering")
+    load_recipeboxes(19, 1, "Have to try this one!")
+    load_recipeboxes(35, 5, "Our favorite!!!")
+    load_recipeboxes(70, 2, "Try serving to family this week")
+    load_recipeboxes(59, 4, "12 servings")
 
 
 def example_recipes():
@@ -525,11 +526,11 @@ def example_user_boxes():
     load_boxes(1, "Party Food")
     load_boxes(1, "Weekend Desserts")
 
-    load_recipeboxes(1, 1)
-    load_recipeboxes(2, 1)
-    load_recipeboxes(3, 2)
-    load_recipeboxes(4, 2)
-    load_recipeboxes(5, 2)
+    load_recipeboxes(1, 1, "Simple party-pleaser.")
+    load_recipeboxes(2, 1, "Healthy appetizer")
+    load_recipeboxes(3, 1, "Need to buy ingredients")
+    load_recipeboxes(4, 2, "Make some substitutions")
+    load_recipeboxes(5, 2, "Try with different produce...")
 
 
 if __name__ == "__main__":

@@ -1,11 +1,6 @@
 """Models and database functions for Vegan Recipes project."""
 
 from flask_sqlalchemy import SQLAlchemy
-import bcrypt
-
-# This is the connection to the PostgreSQL database; we're getting this through
-# the Flask-SQLAlchemy helper library. On this, we can find the `session`
-# object, where we do most of our interactions (like committing, etc.)
 
 db = SQLAlchemy()
 
@@ -345,6 +340,7 @@ class RecipeBox(db.Model):
     boxes = db.relationship("Box",
                             backref=db.backref("recipesboxes"))
 
+
 class RecipeIngredient(db.Model):
     """Connects Recipe with Ingredient."""
 
@@ -372,7 +368,6 @@ class RecipeIngredient(db.Model):
     #Define relationship usingredientsmeasures table
     usingredientsmeasures = db.relationship("USIngredientMeasure",
                                             backref=db.backref("recipesingredients"))
-
 
 
 class IngredientType(db.Model):
@@ -480,8 +475,6 @@ class RecipeCourse(db.Model):
 
 def connect_to_db(app, db_uri='postgresql:///testing'):
     """Connect the database to our Flask app."""
-
-    # Configure to use our PostgreSQL database
 
     ###### final database
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///recipes'

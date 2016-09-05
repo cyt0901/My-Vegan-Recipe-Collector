@@ -11,9 +11,7 @@
             <h1 id="recname">{{ recipe.recipe_name }}</h1>
             {% if session.get("user_id") %}
                 <h4>
-                    <form action="/save_recipe/{{ recipe.recipe_id }}">
-                        <input type="submit" value="Save Recipe">
-                    </form>
+                    <a href="/save_recipe/{{ recipe.recipe_id }}" class="btn btn-primary" role="button"><span class="glyphicon glyphicon-star"></span>&nbspSave Recipe</a>
                 </h4>
             {% endif %}
             Source: <a href="{{ recipe.src_url }}" target="_blank">{{ recipe.websites.site_name }}</a><br>
@@ -39,7 +37,7 @@
                         {% endif %}
                     {% endfor %}
                 </select>
-                <label><input type="submit" value="Convert" id="convert"></label>
+                <label><input class="btn btn-default" type="submit" value="Convert" id="convert"></label>
             </form>
             <br><br><br>
             Ingredients:<br><br>

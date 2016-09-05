@@ -6,15 +6,13 @@
       <script src="https://code.jquery.com/jquery.js"></script>
       <script src="https://d3js.org/d3.v4.min.js"></script>
       <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
-      <link href="static/css/style.css" rel="stylesheet">
+      <link href="/static/css/style.css" rel="stylesheet">
     </head>
-
     <body>
         <nav class="navbar navbar-default">
           <div class="container-fluid">
-            <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header">
-              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#collapsible-navbar" aria-expanded="false">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
@@ -22,37 +20,15 @@
               </button>
               <a class="navbar-brand" href="/">Home</a>
             </div>
-
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-              <!-- <ul class="nav navbar-nav"> -->
-                <!-- <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li> -->
-                <!-- <li><a href="#">Link</a></li>
-                <li class="dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>
-                  <ul class="dropdown-menu">
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
-                    <li role="separator" class="divider"></li>
-                    <li><a href="#">Separated link</a></li>
-                    <li role="separator" class="divider"></li>
-                    <li><a href="#">One more separated link</a></li>
-                  </ul>
-                </li> -->
-              <!-- </ul> -->
-              <!-- <form class="navbar-form navbar-left">
-                <div class="form-group">
-                  <input type="text" class="form-control" placeholder="Search">
-                </div>
-                <button type="submit" class="btn btn-default">Submit</button>
-              </form> -->
+            <div class="collapse navbar-collapse" id="collapsible-navbar">
+              <ul class="nav navbar-nav navbar-left">
+                <a class="navbar-text" href="/search">Search</a>
+              </ul>
               <ul class="nav navbar-nav navbar-right">
-                <li><a href="/search">Search</a></li>
                 <!-- IF USER LOGGED IN -->
                 {% if session.get("user_id") %}
                   <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> Welcome, {{ session["username"] }} <span class="caret"></span></a>
+                    <a href="#" class="dropdown-toggle navbar-text" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> Welcome, {{ session["username"] }} <span class="caret"></span></a>
                     <ul class="dropdown-menu">
                       <li><a href="/profile">Profile</a></li>
                       <li><a href="/my_recipes">My Recipes</a></li>
@@ -60,9 +36,35 @@
                       <li><a href="/logout">Logout</a></li>
                     </ul>
                   </li>
+                <!-- IF USER NOT LOGGED IN -->
                 {% else %}
                   <li>
-                    <a href="/login" role="button" aria-haspopup="true" aria-expanded="false">Login </a>
+                      <a href="#" role="button" data-toggle="modal" data-target=".login-modal-sm">Login</a>
+                      <div class="modal fade login-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+                        <div class="modal-dialog modal-sm" role="document">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <button type="button" class="close" data-dismiss="modal" aria-labe="Close"><span aria-hidden="true">&times;</span></button>
+                              <h4 class="modal-title" id="myModalLabel">Login</h4>
+                              or&nbsp<a href="/register">register here</a>
+                            </div>
+                            <div class="modal-body">
+                              <form action="/login" id="login-form" method="POST">
+                                <label> Username <br><input type="text" id="username" name="username" value="Ada" required></label><br><br>
+                                <label> Password <br><input type="password" name="password" value="12345" required></label><br><br>
+                                <input type="submit" id="submit-login" hidden>
+                              </form>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                              <label for="submit-login" class="btn btn-primary">Login</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  </li>
+                  <li>
+                    <a href="/register">Register</a>
                   </li>
                 {% endif %}
               </ul>

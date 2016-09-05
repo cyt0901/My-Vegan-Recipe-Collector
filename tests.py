@@ -2,16 +2,11 @@ import unittest
 
 from server import app
 from model import db, connect_to_db
-from model import User, Recipe, Website, Serving, Ingredient, USUnit, MetricUnit, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
+from model import User, Box
 from seed import example_recipes, example_user_boxes, load_users
-from model import User
 from StringIO import StringIO
 import json
 import bcrypt
-
-from urllib import urlopen
-from bs4 import BeautifulSoup, SoupStrainer
-import re
 
 
 class BasicIntegrationTests(unittest.TestCase):
@@ -36,7 +31,7 @@ class BasicIntegrationTests(unittest.TestCase):
         result = self.client.get("/register")
 
         self.assertEqual(result.status_code, 200)
-        self.assertIn("Register", result.data)
+        self.assertIn("or login here", result.data)
         self.assertNotIn("Welcome", result.data)
 
     def test_login(self):
@@ -45,7 +40,7 @@ class BasicIntegrationTests(unittest.TestCase):
         result = self.client.get("/login")
 
         self.assertEqual(result.status_code, 200)
-        self.assertIn("Create a new account", result.data)
+        self.assertIn("or create a new account", result.data)
         self.assertNotIn("Welcome", result.data)
 
 
@@ -166,7 +161,7 @@ class DatabaseLoginIntegrationTests(unittest.TestCase):
 
         test_cases = [
             ({"username": "TestUser", "password": "testing"},
-             "Create a new account"),
+             "or create a new account"),
             ({"username": "Ada", "password": "testing"},
              "Unavailable username")
         ]
@@ -247,7 +242,26 @@ class DatabaseUserIntegrationTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn("Sun-Dried Tomato Chickpea Burgers", result.data)
         self.assertIn("Party Food", result.data)
+        self.assertIn("Make some substitutions", result.data)
         self.assertIn("Change Username or Password", result.data)
+
+    def test_update_my_recipes(self):
+        """Tests update of user's saved recipes."""
+
+        result = self.client.get("/update_my_recipes?box_id=1&recipe_id=2&delete=Y")
+
+        self.assertEqual(result.status_code, 200)
+        self.assertIn("Update successful", result.data)
+
+    def test_preview(self):
+        """Tests preview of user's saved recipes."""
+
+        result = self.client.get("/preview.html")
+
+        self.assertEqual(result.status_code, 200)
+        self.assertIn("Sun-Dried Tomato Chickpea Burgers", result.data)
+        self.assertIn("My Notes:", result.data)
+        self.assertIn("Need to buy ingredients", result.data)
 
     def test_upload(self):
         """Tests profile picture upload."""

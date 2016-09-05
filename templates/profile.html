@@ -17,14 +17,22 @@
                 {% else %}
                     <img src="static/img/profile-placeholder.png" width="300">
                 {% endif %}
+                <br>
                 <form action="/upload" method="POST" enctype="multipart/form-data">
                     <input type="file" name="file"><br>
-                    <input type="submit" value="Upload">
+                    <input class="btn btn-default" type="submit" value="Upload">
+                </form>
+                <br>
+                <h4 class="clickable" id="update">Change Username or Password <span class="glyphicon glyphicon-menu-down"></span></h4><br>
+                <form action="/settings" class="expandable" id="settings" method="POST">
+                    <label> Change Username <br><input type="text" id="username" name="username" value="Ada2016"></label><br><br>
+                    <label> Change Password <br><input type="password" name="password" value="bright"></label><br><br>
+                    <label><input class="btn btn-default" type="submit" value="Update"></label>
                 </form>
             </div>
             <div class="col-xs-12 col-md-8">
                 <h4><a href="/my_recipes">My Recipes</a></h4>
-                <button id="edit">Edit My Recipes</button><br><br>
+                <button class="btn btn-default" id="edit">Edit My Recipes</button><br><br>
                 <p class="to-toggle alert" hidden>NOTE: Click icons next to recipe names to delete.</p><br>
                 <div id="preview">
                 {% include 'preview.html' %}
@@ -32,16 +40,6 @@
             </div>                     
         </div>
         <br>
-        <div class="row">
-            <div class="col-xs-12">
-                <h4 id="update">Change Username or Password <span class="glyphicon glyphicon-menu-down"></span></h4><br>
-                <form action="/settings" class="expandable" id="settings" method="POST">
-                    <label> Change Username <br><input type="text" id="username" name="username" value="Ada2016"></label><br><br>
-                    <label> Change Password <br><input type="password" name="password" value="bright"></label><br><br>
-                    <label><input type="submit" value="Update"></label>
-                </form>
-            </div>
-        </div>
         <br> 
         <div class="row">  
                 <div class="col-xs-12 col-md-4 col-lg-3">

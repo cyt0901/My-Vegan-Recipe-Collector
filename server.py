@@ -2,10 +2,10 @@
 
 import os
 from jinja2 import StrictUndefined
-from flask import Flask, render_template, redirect, flash, session, request, url_for, send_from_directory, jsonify, Markup
+from flask import Flask, render_template, redirect, flash, session, request
 from flask_debugtoolbar import DebugToolbarExtension
 from model import connect_to_db, db
-from model import User, Recipe, Website, Serving, Ingredient, USUnit, MetricUnit, USAmount, MetricAmount, Instruction, Course, RecipeIngredient, IngredientType, RecipeServing, USIngredientMeasure, MetricIngredientMeasure, RecipeCourse, Box, RecipeBox
+from model import User, Recipe, Ingredient, Course, IngredientType, Box, RecipeBox
 from fractions import Fraction
 import json
 import bcrypt
@@ -16,7 +16,6 @@ app.secret_key = "ABC"
 
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 app.config['ALLOWED_EXTENSIONS'] = set(['png', 'jpg', 'jpeg'])
-# set max payload 1MB
 app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024
 
 app.jinja_env.undefined = StrictUndefined
@@ -44,16 +43,13 @@ def register_process():
     """Handle registration form."""
 
     if not session.get("user_id"):
-        # Get form variables
         username = request.form.get("username")
         password = bcrypt.hashpw(request.form.get("password").encode('utf-8'), bcrypt.gensalt())
 
-        # Check database to see if username is available for use
         if User.query.filter_by(username=username).all():
             flash("Unavailable username")
             return redirect("/register")
 
-        # Add new user to database
         new_user = User(username=username, password=password)
         db.session.add(new_user)
 
@@ -75,23 +71,19 @@ def login_process():
     """Login the user."""
 
     if not session.get("user_id"):
-        # Get form variables
         username = request.form.get("username")
         password = request.form.get("password").encode('utf-8')
 
         user = User.query.filter_by(username=username).first()
 
-        # Query database to see if username exists
         if not user:
             flash("No such user exists")
             return redirect("/login")
 
-        # Query database to see if password is correct
         if not bcrypt.checkpw(password, user.password.encode('utf-8')):
             flash("Incorrect password")
             return redirect("/login")
 
-        # Add user to the session to be logged in
         session["user_id"] = user.user_id
         session["username"] = user.username
 
@@ -105,10 +97,10 @@ def logout():
     """Log out the user."""
 
     if session.get("user_id"):
-        # Remove user from the session to be logged out
         session.pop("user_id", None)
         session.pop("username", None)
         flash("You are now logged out")
+
         return redirect("/")
 
 
@@ -138,10 +130,8 @@ def upload_img():
         user = User.query.filter_by(user_id=session["user_id"]).first()
 
         if user.profile_img:
-            # remove old img from uploads folder
             os.remove(os.path.join(app.config['UPLOAD_FOLDER'], user.profile_img))
 
-        # add img name to database for user
         user.profile_img = filename
 
         db.session.commit()
@@ -174,14 +164,19 @@ def show_search_results():
     max_time = request.args.get("time")
     search_term = request.args.get("search-term")
 
+    matching_recipes = find_matching_recipes(search_term=search_term, ingredients=all_ingredients, courses=all_courses, time=max_time)
 
-    search_parameters = filter(None, [search_term] + all_ingredients + all_courses + ["< " + max_time + " min"])
-
-    matching_recipes = find_matching_recipes(search_parameters=search_parameters, search_term=search_term, ingredients=all_ingredients, courses=all_courses, time=max_time)
+    if max_time:
+        max_time = "under " + max_time + " min"
+    else:
+        max_time = " "
 
     return render_template("results.html",
                            matching_recipes=matching_recipes,
-                           search_parameters=search_parameters)
+                           ingredients=all_ingredients,
+                           courses=all_courses,
+                           time=max_time,
+                           search=search_term)
 
 
 @app.route('/recipe/<int:recipe_id>')
@@ -262,7 +257,6 @@ def update_settings():
     """Update database with new values from user."""
 
     if session.get("user_id"):
-        # Get form variables
         username = request.form.get("username")
         password = request.form.get("password").encode('utf-8')
 
@@ -311,7 +305,7 @@ def update_recipe_box():
             box.label_name = label_name
             db.session.commit()
 
-    return "Update sucessful"
+    return "Update successful"
 
 
 @app.route('/preview.html')
@@ -371,9 +365,7 @@ def convert_ingredients(recipe, conversion_amount):
         # check if usamounts exists
         if recipe.recipesingredients[i].usamounts:
             for amount in recipe.recipesingredients[i].usamounts:
-                # calculate new decimal value as a float
                 new_decimal = float(amount.us_decimal) * conversion_amount
-                # find the whole number value for the new_decimal value
                 whole_num = int(new_decimal)
                 # only a fraction exists; find the fractional representation
                 if whole_num == 0:
@@ -392,12 +384,10 @@ def convert_ingredients(recipe, conversion_amount):
             # check length of amounts list
             if len(amounts) > 1:
                 amounts = amounts[0] + " - " + amounts[1]
-                # check if usunits exists; if so, add to string
                 if recipe.recipesingredients[i].usunits:
                     amounts = amounts + " " + recipe.recipesingredients[i].usunits[0].us_unit
             else:
                 amounts = amounts[0]
-                # check if usunits exists; if so, add to string
                 if recipe.recipesingredients[i].usunits:
                     amounts = amounts + " " + recipe.recipesingredients[i].usunits[0].us_unit
 
@@ -426,11 +416,8 @@ def convert_ingredients(recipe, conversion_amount):
             else:
                 metrics = "(" + metrics[0] + " " + recipe.recipesingredients[i].metricunits[0].metric_unit + ")"
 
-        # add amounts to ingredient_info
         ingredient_info['us_amount'] = amounts
-        # add metrics to ingredient_info
         ingredient_info['metric_amount'] = metrics
-        # add ingredient string to ingredient_info
         ingredient_info['ingredient'] = recipe.recipesingredients[i].original_string
 
         if recipe.recipesingredients[i].link:
@@ -458,13 +445,11 @@ def get_my_recipes_data(boxes):
     return data
 
 
-def find_matching_recipes(search_parameters, search_term, ingredients, courses, time):
+def find_matching_recipes(search_term, ingredients, courses, time):
     """Return list of recipes that match the selected search parameters."""
 
-    # no other search values except for ANY or ALL search_term
-    if len(search_parameters) == 2 and not time:
+    if not ingredients and not courses and not time:
         find_recipes = Recipe.query.all()
-        search_parameters = search_parameters[:-1]
 
     recipe_count = {}
 
@@ -473,16 +458,13 @@ def find_matching_recipes(search_parameters, search_term, ingredients, courses, 
         find_ingredients = Ingredient.query.filter(Ingredient.ingredient_name.in_(ingredients)).all()
 
         for ingredient in find_ingredients:
-            # for ANY ingredients
             find_recipes = ingredient.recipes
-            # create a counter with a dictionary
             for recipe in find_recipes:
                 recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
 
         # for ALL ingredients
         if search_term == "all":
             for item, count in recipe_count.items():
-                # if the count does not match the length of the ingredients chosen, remove that key/value pair from the dictionary
                 if count != len(ingredients):
                     del recipe_count[item]
 
@@ -516,7 +498,7 @@ def find_matching_recipes(search_parameters, search_term, ingredients, courses, 
 
     # MATCH TIME
     if time:
-        find_time = Recipe.query.filter(Recipe.time_in_min < time).all()
+        find_time = Recipe.query.filter(Recipe.time_in_min < int(time)).all()
 
         for recipe in find_time:
             recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
@@ -524,8 +506,6 @@ def find_matching_recipes(search_parameters, search_term, ingredients, courses, 
         find_recipes = recipe_count.keys()
 
     return find_recipes
-
-
 
 
 ###############################################################################

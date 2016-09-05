@@ -1,0 +1,15 @@
+'<form action="/update_my_recipes" id="editForm">
+    {% for box in user.boxes %}
+        <h5>{{ box.label_name }}&nbsp<input class="to-toggle" type="text" id="label" hidden></h5>
+        <input type="hidden" name="label" value="{{ box.label_name }}">
+        {% for i in range(box.recipesboxes|length) %}
+            <input type="hidden" name="recipe" value="{{ box.recipesboxes[i].recipes.recipe_id }}">
+            <a href="/recipe/{{ box.recipesboxes[i].recipes.recipe_id }}"> {{ box.recipesboxes[i].recipes.recipe_name }}</a>&nbsp<span class="removeIcon to-toggle" hidden><span class="glyphicon glyphicon-remove" data-recipe="{{ box.recipesboxes[i].recipes.recipe_id }}" data-box="{{ box.box_id }}"></span></span><br>
+            <h6>My Notes:</h6>
+            <p>&nbsp&nbsp{{ box.recipesboxes[i].recipe_notes }}</p>
+            <p class="clickable edit-notes" hidden>&nbsp&nbsp(Add/Update Notes)</p>
+            &nbsp&nbsp<textarea id="notes" name="notes" placeholder="Max Length 500" maxlength="600" rows="10" cols="40" class="note-section" hidden></textarea>
+            <br><br>
+        {% endfor %}
+    {% endfor %}
+</form>'

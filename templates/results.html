@@ -10,25 +10,52 @@
     </div>
     <div class="row">
         <div class="col-xs-12">
-            <h5>Your search: </h5>
-            <p>{{ search_parameters[0].upper() }} 
-            {% for parameter in search_parameters[1:] %}
-                {{ parameter }} 
-            {% endfor %}
-            <p>
+            <h4>Your search: 
+                <small>{{ search.upper() }} recipes {{ time }}</small>
+            </h4>
+            <table>
+                <tr>
+                    <th class="indent1">Ingredients</th>
+                </tr>
+                <tr>
+                    {% for ingredient in ingredients %}
+                        <td class="indent1">{{ ingredient }}</td>
+                    {% endfor %}   
+                </tr>            
+            </table>
+            <table>
+                <tr>
+                    <th class="indent1">Courses</th>
+                </tr>
+                <tr>
+                    {% for course in courses %}
+                        <td class="indent1">{{ course.lower() }}</td>
+                    {% endfor %}   
+                </tr>            
+            </table>
         </div>
     </div>
+    <br>
     <div class="row">
         <div class="col-xs-12">
-            <a href="/search"><button id="new-search">New Search</button></a>
+            <a href="/search" class="btn btn-default" role="button" id="new-search">New Search</a>
         </div>
     </div>
     <br> 
-    <div class="row">  
-        {% for recipe in matching_recipes %}
-            <div class="col-xs-12 col-md-4 col-lg-3">
-                <center><h6><a href="/recipe/{{ recipe.recipe_id }}">{{ recipe.recipe_name }}</a></h6></center>
-                <center><a href="/recipe/{{ recipe.recipe_id }}"><img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive img-thumbnail"></a></center>
+    <div class="row">
+        {% if not matching_recipes %}
+            <div class="col-xs-12 alert-warning">
+                <strong>Oops!</strong> No recipes found. Please try again.
+            </div>
+        {% endif %}
+        {% for recipe in matching_recipes|sort(attribute='recipe_name')  %}
+            <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="thumbnail">
+                    <center><a href="/recipe/{{ recipe.recipe_id }}"><img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive">
+                    <h4><a href="/recipe/{{ recipe.recipe_id }}">{{ recipe.recipe_name }}</a></h4></center>
+                    <center><a href="/save_recipe/{{ recipe.recipe_id }}" class="btn btn-primary" role="button"><span class="glyphicon glyphicon-star"></span>&nbspSave Recipe</a></center>
+
+                </div>
                 <br>
             </div>
         {% endfor %} 

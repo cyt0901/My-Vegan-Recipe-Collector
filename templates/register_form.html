@@ -3,13 +3,23 @@
 {% block content %}
 
 <div class="my-contents">
-    <h1>Register</h1>
-    <div class="forms">
-        <form action="/register" id="register-form" method="POST">
-            <label> Username <br><input type="text" id="username" name="username" value="Ada" required></label><br><br>
-            <label> Password <br><input type="password" name="password" value="12345" required></label><br><br>
-            <label><input type="submit" value="Register"></label>
-        </form>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12">
+                <h1>Register</h1>
+                <p><a href="/login">or login here</a></p>
+            </div>
+        </div>
+        <div class="row forms">
+            <div class="col-xs-12">
+                <form action="/register" id="register-form" method="POST">
+                    <label> Username <br><input type="text" id="username" name="username" placeholder="Enter username" value="Balloonicorn" required></label><br><br>
+                    <label> Password <br><input type="password" name="password" placeholder="Enter password" value="12345" required></label><br><br>
+                    <label><input class="btn btn-primary" type="submit" value="Register"></label>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
+
 {% endblock %}
