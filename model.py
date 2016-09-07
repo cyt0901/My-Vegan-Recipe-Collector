@@ -473,7 +473,7 @@ class RecipeCourse(db.Model):
 
 #####   HELPER FUNCTIONS  ######################################################
 
-def connect_to_db(app, db_uri='postgresql:///testing'):
+def connect_to_db(app, db_uri='postgresql:///recipes'):
     """Connect the database to our Flask app."""
 
     ###### final database

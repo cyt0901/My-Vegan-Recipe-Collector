@@ -533,6 +533,37 @@ def example_user_boxes():
     load_recipeboxes(5, 2, "Try with different produce...")
 
 
+def update_database():
+    """Update database to account for some special cases."""
+
+    ingredient = Ingredient.query.filter_by(ingredient_name='rib eye').first()
+    db.session.delete(ingredient)
+
+    ingtype = IngredientType.query.filter_by(type_name='Meat').first()
+    db.session.delete(ingtype)
+
+    ingtype_jams = IngredientType.query.filter_by(type_name='Nut butters, Jams, and Honey').first()
+    ingtype_jams.type_name = "Nut Butters and Jams"
+
+    ingtype_other = IngredientType.query.filter_by(type_name='?').first()
+    ingtype_other.type_name = "Other"
+
+    ingtype_dairy = IngredientType.query.filter_by(type_name='Milk, Eggs, Other Dairy').first()
+    ing_dairy_id = ingtype_dairy.type_id
+    ingtype_dairy.type_name = "Dairy Alternatives"
+
+    ingtype_dairy2 = IngredientType.query.filter_by(type_name='Cheese').first()
+    new_ingtype = ingtype_dairy2.ingredients[0]
+    new_ingtype.type_id = ing_dairy_id
+    new_ingtype.type_name = "Dairy Alternatives"
+    db.session.delete(ingtype_dairy2)
+
+    ingtype_oil = IngredientType.query.filter_by(type_name='Oil, Vinegar, Salad Dressing').first()
+    ingtype_oil.type_name = "Oil, Vinegar, Dressing"
+
+    db.session.commit()
+
+
 if __name__ == "__main__":
     connect_to_db(app)
 
@@ -546,15 +577,16 @@ if __name__ == "__main__":
     #         "http://minimalistbaker.com/watermelon-sashimi/",
     #         "http://minimalistbaker.com/vegan-milky-way/"]
 
-    example_recipes()
-    example_user_boxes()
+    # example_recipes()
+    # example_user_boxes()
 
     ######## ALL DATA ##############
-    # url = open("data/all_recipe_urls.txt").read()
+    url = open("data/all_recipe_urls.txt").read()
 
-    # for url in open("data/all_recipe_urls.txt"):
-    #     url = url.rstrip()
-    #     all_info = get_information(url)
-    #     add_recipe_data(all_info)
+    for url in open("data/all_recipe_urls.txt"):
+        url = url.rstrip()
+        all_info = get_information(url)
+        add_recipe_data(all_info)
 
-    # add_users_boxes()
+    update_database()
+    add_users_boxes()

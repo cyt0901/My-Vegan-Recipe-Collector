@@ -42,7 +42,7 @@
         </div>
     </div>
     <br> 
-    <div class="row">
+    <div class="row group" id="rec-wrapper">
         {% if not matching_recipes %}
             <div class="col-xs-12 alert-warning">
                 <strong>Oops!</strong> No recipes found. Please try again.
@@ -50,15 +50,34 @@
         {% endif %}
         {% for recipe in matching_recipes|sort(attribute='recipe_name')  %}
             <div class="col-xs-12 col-sm-6 col-md-4">
+            <div class="clearfix visible-xs-block"></div>
                 <div class="thumbnail">
-                    <center><a href="/recipe/{{ recipe.recipe_id }}"><img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive">
-                    <h4><a href="/recipe/{{ recipe.recipe_id }}">{{ recipe.recipe_name }}</a></h4></center>
-                    <center><a href="/save_recipe/{{ recipe.recipe_id }}" class="btn btn-primary" role="button"><span class="glyphicon glyphicon-star"></span>&nbspSave Recipe</a></center>
-
+                    <a href="/recipe/{{ recipe.recipe_id }}"><img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive img-result">
+                    <center><h4 class="rec-result"><a class="rec-name" href="/recipe/{{ recipe.recipe_id }}">{{ recipe.recipe_name }}</a></h4></center>
+                    {% if session.get("user_id") %}
+                        <center><a href="/save_recipe/{{ recipe.recipe_id }}" class="btn btn-primary save-btn" role="button"><span class="glyphicon glyphicon-star"></span>&nbspSave Recipe</a></center>
+                    {% endif %}
                 </div>
                 <br>
             </div>
         {% endfor %} 
     </div>  
 </div>
+
+<script>
+
+    function matchThumbnails(evt) {
+        $('.img-result').each(function() {
+            var imgWidth = $(this).width();
+            $(this).height(imgWidth + 'px');
+        });
+
+        $('.thumbnail').matchHeight({ property: 'min-height' });    
+    };
+
+    $(document).ready(matchThumbnails);
+
+    $(document).on('resize', matchThumbnails);
+
+</script>
 {% endblock %}

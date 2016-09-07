@@ -10,147 +10,40 @@
                 <h5><a id="logout" href="/logout">Logout</a></h5>
             </div>
         </div>
-        <div class="row">
-            <div class="col-xs-12 col-md-4">
+        <div class="row profile-div thumbnail">
+            <div class="col-xs-12">
                 {% if user.profile_img %}
-                    <img src="static/uploads/{{ user.profile_img }}" width="300">
+                    <img src="static/uploads/{{ user.profile_img }}" width="300" class="profile-img img-responsive img-rounded">
                 {% else %}
-                    <img src="static/img/profile-placeholder.png" width="300">
+                    <img src="static/img/profile-placeholder.png" width="300" class="profile-img img-responsive img-rounded">
                 {% endif %}
                 <br>
                 <form action="/upload" method="POST" enctype="multipart/form-data">
-                    <input type="file" name="file"><br>
                     <input class="btn btn-default" type="submit" value="Upload">
+                    <input type="file" name="file" id="file-upload">
                 </form>
                 <br>
-                <h4 class="clickable" id="update">Change Username or Password <span class="glyphicon glyphicon-menu-down"></span></h4><br>
+                <h4 class="clickable" id="update">Change Username or Password <span class="glyphicon glyphicon-menu-down"></span></h4><br><br>
                 <form action="/settings" class="expandable" id="settings" method="POST">
-                    <label> Change Username <br><input type="text" id="username" name="username" value="Ada2016"></label><br><br>
-                    <label> Change Password <br><input type="password" name="password" value="bright"></label><br><br>
+                    <label class="indent1"> Change Username <br><input type="text" id="username" name="username" value="Ada2016"></label><br><br>
+                    <label class="indent1"> Change Password <br><input type="password" name="password" value="bright"></label><br><br>
                     <label><input class="btn btn-default" type="submit" value="Update"></label>
+                    <label><input  class="btn btn-default" type="reset" value="Cancel"></label>
                 </form>
             </div>
-            <div class="col-xs-12 col-md-8">
-                <h4><a href="/my_recipes">My Recipes</a></h4>
-                <button class="btn btn-default" id="edit">Edit My Recipes</button><br><br>
+        </div>
+        <div class="row preview-div thumbnail">
+            <div class="col-xs-12">
+                <center><h2><a href="/my_recipes">My Recipes</a></h2></center>
+                <center><button class="btn btn-default" id="edit">Edit My Recipes</button></center><br><br>
                 <p class="to-toggle alert" hidden>NOTE: Click icons next to recipe names to delete.</p><br>
                 <div id="preview">
                 {% include 'preview.html' %}
                 </div>
             </div>                     
         </div>
-        <br>
-        <br> 
-        <div class="row">  
-                <div class="col-xs-12 col-md-4 col-lg-3">
-
-
-                </div>
-        </div>  
     </div>
 </div>
 
-
-
-
-<script>
-
-    $(document).on('click', '#update', function(evt) {
-        $(this).nextUntil('div').toggle();
-    });
-
-    $(document).on('click', '#edit', function(evt) {
-        evt.preventDefault();
-        if (this.innerHTML == 'Edit My Recipes') {
-            $('.to-toggle').toggle();
-            $('.edit-notes').show();
-            $(this).html('Cancel');
-        } else {
-            $('.to-toggle').toggle();
-            $('.edit-notes').hide();
-            $('.note-section').hide();
-            $('.current-notes').show();
-            $('.save-notes').hide();
-            $('#edit').html('Edit My Recipes');
-        }       
-    });
-
-    $(document).on('click', '#save-label', function(evt) {
-        var newLabel = $(this).prev().val();
-        
-        $.data(this.previousElementSibling, "newLabel", newLabel);
-
-        var box_id = $(this).prev().data().box;
-        var label_name = $(this).prev().data().newLabel;
-        var info = {
-            "box_id": box_id,
-            "recipe_id": -1,
-            "delete": "N",
-            "label_name": newLabel
-        }
-
-        console.log(info);
-
-        $.get('/update_my_recipes', info, updateMyRecipes);
-
-    });
-
-    $(document).on('click', '.edit-notes', function(evt) {
-        $(this).toggle();
-        $(this).prev().hide();
-        $(this).next().show();
-        $(this).next().next().show();
-    });
-
-    $(document).on('click', '.save-notes', function(evt) {
-        var newNotes = $(this).prev().val();
-
-        $.data(this.previousElementSibling, "notes", newNotes);
-
-        var rec_id = $(this).prev().data().recipe;
-        var box_id = $(this).prev().data().box;
-        var notes = $(this).prev().data().notes;
-        var info = {
-            "box_id": box_id,
-            "recipe_id": rec_id,
-            "delete": "N",
-            "notes": notes
-        }
-
-        console.log(info);
-
-        $.get('/update_my_recipes', info, updateMyRecipes);
-
-    });
-
-    $(document).on('mouseover', '.glyphicon-remove', function(evt) {
-        $('.alert').css('color', 'red');
-    });
-
-    $(document).on('mouseout', '.glyphicon-remove', function(evt) {
-        $('.alert').css('color', '#333');
-    });
-
-    function updateMyRecipes(results) {
-        $.get('/preview.html', function(results) {
-            $('#preview').html(results);
-        });
-
-        $('#edit').click();
-    };
-
-    $(document).on('click', '.glyphicon-remove', function(evt) {
-        var rec_id = $(this).data().recipe;
-        var box_id = $(this).data().box;
-        var info = {
-            "box_id": box_id,
-            "recipe_id": rec_id,
-            "delete": "Y"
-        };
-
-        $.get('/update_my_recipes', info, updateMyRecipes);
-    });
-
-
-</script>
+<script src="/static/js/profile.js"></script>
 {% endblock %}

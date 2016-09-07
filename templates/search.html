@@ -11,23 +11,19 @@
     <br>
     <form action="/results" id="searching-form">
         <div class="row">
-            <div class="col-xs-12">
-                <label>Search By Ingredients</label>
-                <span class="glyphicon glyphicon-menu-down expand-types"></span><br>
-                <p class="clickable expand-ingredients" hidden>Expand All Ingredients</p>
+            <div class="col-xs-12 ing-header">
+                <span class="clickable-label search-label expand-types">
+                    <h4><label class="add-cursor">Search By Ingredients</label>
+                    <span class="glyphicon glyphicon-menu-down"></span></h4><br>
+                </span>
+                <span class="clickable expand-ingredients" hidden>Expand All Ingredients</span>
             </div>
         </div>
-        <div class="row">
+        <div class="row add-bg">
             {% for t in all_types|sort(attribute='type_name') %}
-                <div class="col-xs-12 col-md-4 expandable indent1 ingredient-type">
-                    {% if t.type_name ==  "Nut butters, Jams, and Honey" %}
-                        Nut butters and Jams
-                    {% elif t.type_name == "Milk, Eggs, Other Dairy" %}
-                        Milk/Dairy Alternatives
-                    {% else %}
-                        {{ t.type_name }}
-                    {% endif %}
-                    <span class="glyphicon glyphicon-triangle-bottom expand-names"></span>
+                <div class="col-xs-12 col-md-4 expandable indent2 ingredient-type clickable-label expand-names">
+                    {{ t.type_name }}
+                    <span class="glyphicon glyphicon-triangle-bottom"></span>
                     <div class="expandable indent2 ingredient-name">
                         {% for ingredient in t.ingredients|sort(attribute='ingredient_name') %}
                             <label><input type="checkbox" name="ingredient" value="{{ ingredient.ingredient_name }}"> {{ ingredient.ingredient_name }} </label><br>
@@ -39,13 +35,15 @@
         <br>
         <div class="row">
             <div class="col-xs-12">
-                <label>Search By Courses</label>
-                <span class="glyphicon glyphicon-menu-down expand-courses"></span><br>
+                <span class="clickable-label search-label expand-courses">
+                    <h4><label class="add-cursor">Search By Courses</label>
+                    <span class="glyphicon glyphicon-menu-down"></span></h4><br>
+                </span>
             </div>
         </div>
-        <div class="row">
+        <div class="row add-bg">
             {% for course in all_courses|sort(attribute='course_name') %}
-                <div class="col-xs-12 col-md-4 expandable indent1 course-name">
+                <div class="col-xs-12 col-md-4 expandable indent2 course-name">
                     <label><input type="checkbox" name="course" value="{{ course.course_name }}"> {{ course.course_name }} </label>
                 </div>
             {% endfor %}
@@ -53,14 +51,14 @@
         <br>
         <div class="row">
             <div class="col-xs-12">
-                <label> Search By Maximum Time: <input type="number" name="time" min="1" max="1500"></label><br>
+                <h4><label class="search-label"> Search By Maximum Time: <input type="number" name="time" min="1" max="1500"></label></h4><br>
             </div>
         </div>
         <br>
         <div class="row">
             <div class="col-xs-12">
-                <label><input type="radio" name="search-term" value="any" checked>&nbspAny Terms</label>&nbsp&nbsp
-                <label><input type="radio" name="search-term" value="all">&nbspAll Terms</label>
+                <h4 class="adjust-width"><label class="search-label"><input type="radio" name="search-term" value="any" checked>&nbspAny Terms</label></h4>&nbsp&nbsp
+                <h4 class="adjust-width"><label class="search-label"><input type="radio" name="search-term" value="all">&nbspAll Terms</label></h4>
             </div>
         </div>
         <br>
@@ -73,34 +71,6 @@
     </form> 
 </div>
 
-<script>
-
-    $('.expand-types').on('click', function(evt) {
-        $('.expand-ingredients').toggle();
-        $('.ingredient-type').toggle();
-        $('.ingredient-name').hide(); 
-        $('.expand-ingredients').html('Expand All Ingredients');        
-    });
-
-    $('.expand-names').on('click', function(evt) {
-        $(this).nextUntil('label').toggle();
-        $('.expand-ingredients').html('Collapse All Ingredients');
-    });
-
-    $('.expand-ingredients').on('click', function(evt) {
-        if ($(this).html() == 'Expand All Ingredients') {
-            $(this).html('Collapse All Ingredients');
-            $('.ingredient-name').show();
-        } else {
-            $(this).html('Expand All Ingredients');
-            $('.ingredient-name').hide();
-        }
-    });
-
-    $('.expand-courses').on('click', function(evt) {
-        $('.course-name').toggle();
-    });    
-
-</script>
+<script href="/static/js/search.js"></script>
 
 {% endblock %}

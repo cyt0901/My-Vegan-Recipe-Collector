@@ -6,16 +6,13 @@ import re
 def get_img_url(soup):
     """Return url string for recipe image."""
 
-    # Find recipe's img url
     recipe_img = soup.find("div", class_="ERSTopRight").img["src"]
-    print recipe_img
 
     return recipe_img
 
 
 def get_header_info(soup):
-    """Return dictionary of header info, which includes the website name,
-    the recipe category, and the serving size."""
+    """Return dictionary of website name, recipe category, and serving size."""
 
     header_info = {}
 
@@ -44,7 +41,7 @@ def get_header_info(soup):
 
 def get_ingredients(soup):
     """Return dictionary of measurements and ingredient name."""
-    # Find list of ingredients
+
     ingredients = soup.find_all("li", class_="ingredient")
 
     ingredient_info = {}
@@ -238,3 +235,5 @@ def get_all_recipe_info(url):
     all_info['ingredients'] = get_ingredients(soup)
 
     return all_info
+
+

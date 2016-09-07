@@ -1,12 +1,12 @@
-"""Vegan Recipes"""
+"""My Vegan Recipe Collector"""
 
 import os
 from jinja2 import StrictUndefined
 from flask import Flask, render_template, redirect, flash, session, request
 from flask_debugtoolbar import DebugToolbarExtension
 from model import connect_to_db, db
-from model import User, Recipe, Ingredient, Course, IngredientType, Box, RecipeBox
-from fractions import Fraction
+from model import User, Recipe, Course, IngredientType, Box, RecipeBox
+from functions import get_my_recipes_data, convert_ingredients, find_matching_recipes
 import json
 import bcrypt
 from werkzeug import secure_filename
@@ -281,29 +281,28 @@ def update_settings():
         return redirect("/profile")
 
 
-@app.route('/update_my_recipes')
+@app.route('/update_my_recipes', methods=["POST"])
 def update_recipe_box():
     """Update database with new info for user's recipe boxes."""
 
-    box_id = int(request.args.get("box_id"))
-    recipe_id = int(request.args.get("recipe_id"))
-    delete = request.args.get("delete")
+    box_id = int(request.form.get("box_id"))
+    recipe_id = int(request.form.get("recipe_id"))
+    delete = request.form.get("delete")
 
     if delete == "Y":
-        notes = request.args.get("notes")
         recipebox = RecipeBox.query.filter_by(box_id=box_id, recipe_id=recipe_id).first()
         db.session.delete(recipebox)
         db.session.commit()
+    elif recipe_id != (-1):
+        notes = request.form.get("notes")
+        recipebox = RecipeBox.query.filter_by(box_id=box_id, recipe_id=recipe_id).first()
+        recipebox.recipe_notes = notes
+        db.session.commit()
     else:
-        if recipe_id != (-1):
-            recipebox = RecipeBox.query.filter_by(box_id=box_id, recipe_id=recipe_id).first()
-            recipebox.recipe_notes = notes
-            db.session.commit()
-        else:
-            label_name = request.args.get("label_name")
-            box = Box.query.filter_by(box_id=box_id).first()
-            box.label_name = label_name
-            db.session.commit()
+        label_name = request.form.get("label_name")
+        box = Box.query.filter_by(box_id=box_id).first()
+        box.label_name = label_name
+        db.session.commit()
 
     return "Update successful"
 
@@ -351,162 +350,6 @@ def get_my_recipes():
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
-
-
-def convert_ingredients(recipe, conversion_amount):
-    """Return converted ingredient measurements."""
-
-    all_ingredients = []
-    # for each ingredient in recipe
-    for i in range(len(recipe.recipesingredients)):
-        ingredient_info = {}
-        amounts = []
-        metrics = []
-        # check if usamounts exists
-        if recipe.recipesingredients[i].usamounts:
-            for amount in recipe.recipesingredients[i].usamounts:
-                new_decimal = float(amount.us_decimal) * conversion_amount
-                whole_num = int(new_decimal)
-                # only a fraction exists; find the fractional representation
-                if whole_num == 0:
-                    new_fraction = str(Fraction(new_decimal).limit_denominator(32))
-                # no fraction; only whole num
-                elif (new_decimal - whole_num) == 0.0:
-                    new_fraction = str(whole_num)
-                # mixed fraction; has whole num and fraction
-                else:
-                    if Fraction(new_decimal - whole_num).limit_denominator(32) != 0:
-                        new_fraction = str(whole_num) + " " + str(Fraction(new_decimal - whole_num).limit_denominator(32))
-                    else:
-                        new_fraction = str(whole_num)
-                # for each amount in ingredient.usamounts, add to amounts list
-                amounts.append(new_fraction)
-            # check length of amounts list
-            if len(amounts) > 1:
-                amounts = amounts[0] + " - " + amounts[1]
-                if recipe.recipesingredients[i].usunits:
-                    amounts = amounts + " " + recipe.recipesingredients[i].usunits[0].us_unit
-            else:
-                amounts = amounts[0]
-                if recipe.recipesingredients[i].usunits:
-                    amounts = amounts + " " + recipe.recipesingredients[i].usunits[0].us_unit
-
-        # check if only usunits exists, like 'pinch'
-        elif recipe.recipesingredients[i].usunits and not recipe.recipesingredients[i].usamounts:
-            if conversion_amount < 0.5:
-                amounts = "small smidgen"
-            elif conversion_amount == 0.5:
-                amounts = "smidgen"
-            elif 0.5 < conversion_amount < 1.0:
-                amounts = "small pinch"
-            elif conversion_amount == 1.0:
-                amounts = recipe.recipesingredients[i].usunits[0].us_unit
-            elif conversion_amount > 1.0:
-                amounts = str(int(round(conversion_amount))) + " " + recipe.recipesingredients[i].usunits[0].us_unit + "es"
-
-        # check if metricamounts exists
-        if recipe.recipesingredients[i].metricamounts:
-            for amount in recipe.recipesingredients[i].metricamounts:
-                # calculate new metric amount
-                new_metric = str("{0:.2f}".format(float(amount.metric_amount) * conversion_amount))
-                metrics.append(new_metric)
-            # check length of metrics list
-            if len(metrics) > 1:
-                metrics = "(" + metrics[0] + " - " + metrics[1] + " " + recipe.recipesingredients[i].metricunits[0].metric_unit + ")"
-            else:
-                metrics = "(" + metrics[0] + " " + recipe.recipesingredients[i].metricunits[0].metric_unit + ")"
-
-        ingredient_info['us_amount'] = amounts
-        ingredient_info['metric_amount'] = metrics
-        ingredient_info['ingredient'] = recipe.recipesingredients[i].original_string
-
-        if recipe.recipesingredients[i].link:
-            ingredient_info['extlink'] = recipe.recipesingredients[i].link
-        else:
-            ingredient_info['extlink'] = None
-
-        all_ingredients.append(ingredient_info)
-
-    return all_ingredients
-
-
-def get_my_recipes_data(boxes):
-    """Return saved recipes, labels as list of dictionaries, for d3 visual."""
-
-    data = [{"name": "My Recipes", "parent": None, "value": 6, "img": "/static/img/icon9.png"}]
-
-    for box in boxes:
-        each_box = dict(zip(["name", "parent", "value", "img"], [box.label_name, "My Recipes", 4, "/static/img/leaf0.png"]))
-        data.append(each_box)
-        for recipe in box.recipes:
-            each_recipe = dict(zip(["name", "parent", "value", "img", "url"], [recipe.recipe_name, box.label_name, 3.5, recipe.img_url, "/recipe/" + str(recipe.recipe_id)]))
-            data.append(each_recipe)
-
-    return data
-
-
-def find_matching_recipes(search_term, ingredients, courses, time):
-    """Return list of recipes that match the selected search parameters."""
-
-    if not ingredients and not courses and not time:
-        find_recipes = Recipe.query.all()
-
-    recipe_count = {}
-
-    # MATCH INGREDIENTS
-    if ingredients:
-        find_ingredients = Ingredient.query.filter(Ingredient.ingredient_name.in_(ingredients)).all()
-
-        for ingredient in find_ingredients:
-            find_recipes = ingredient.recipes
-            for recipe in find_recipes:
-                recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
-
-        # for ALL ingredients
-        if search_term == "all":
-            for item, count in recipe_count.items():
-                if count != len(ingredients):
-                    del recipe_count[item]
-
-        # list of all recipe objects for ANY or ALL ingredients
-        find_recipes = recipe_count.keys()
-
-    # MATCH COURSES
-    if courses:
-        find_courses = Course.query.filter(Course.course_name.in_(courses)).all()
-
-        course_count = {}
-
-        for course in find_courses:
-            find_courses = course.recipes
-            for recipe in find_courses:
-                course_count[recipe] = course_count.get(recipe, 0) + 1
-
-        # for ALL courses
-        if search_term == "all":
-            for item, count in course_count.items():
-                if count != len(courses):
-                    del course_count[item]
-
-            find_recipes = course_count.keys()
-
-        # for ANY courses
-        else:
-            for item, count in course_count.items():
-                recipe_count[item] = recipe_count.get(item, 0) + 1
-            find_recipes = recipe_count.keys()
-
-    # MATCH TIME
-    if time:
-        find_time = Recipe.query.filter(Recipe.time_in_min < int(time)).all()
-
-        for recipe in find_time:
-            recipe_count[recipe] = recipe_count.get(recipe, 0) + 1
-
-        find_recipes = recipe_count.keys()
-
-    return find_recipes
-
 
 ###############################################################################
 if __name__ == "__main__":

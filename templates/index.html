@@ -3,8 +3,20 @@
 {% block content %}
 
 <div class="my-contents">
-    <center><a href="/search"><img src="/static/img/Vegan_clipart.png" alt="Home" width="500"></a><center>
-    <center><h3><a href="/search">Search</a></h3></center>
+    <div class="home-img">
+        <a href="/search"><img class="img-responsive center-block" src="/static/img/Vegan_clipart.png" width="400" alt="Search"></a>
+        <a href="/search"><button class="btn btn-default btn-lg center-block">Search Recipes</button></a>
+    </div>
+    <div class="overlay-img"></div>
 </div>
+<script>
+    $('.btn-lg').on('mouseover', function(evt) {
+        $('.home-img').css('background-color', 'rgba(255, 247, 197, 0.7)');
+    });
+
+    $('.btn-lg').on('mouseout', function(evt) {
+        $('.home-img').css('background-color', 'rgba(255, 255, 255, 0.8)');
+    });
+</script>
 
 {% endblock %}

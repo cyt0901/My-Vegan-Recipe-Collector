@@ -2,10 +2,10 @@
 {% block title%}Recipe{% endblock %}
 {% block content %}
 
-<div class="container-fluid">
-    <div class="row">
+<div class="my-contents container-fluid">
+    <div class="row rec-div thumbnail">
         <div class="col-xs-12 col-md-5">
-            <img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive img-rounded">
+            <img src="{{ recipe.img_url }}" alt="{{ recipe.recipe_name }}" class="img-responsive img-rounded rec-img-lg">
         </div>
         <div class="col-xs-12 col-md-7">
             <h1 id="recname">{{ recipe.recipe_name }}</h1>
@@ -14,120 +14,86 @@
                     <a href="/save_recipe/{{ recipe.recipe_id }}" class="btn btn-primary" role="button"><span class="glyphicon glyphicon-star"></span>&nbspSave Recipe</a>
                 </h4>
             {% endif %}
-            Source: <a href="{{ recipe.src_url }}" target="_blank">{{ recipe.websites.site_name }}</a><br>
-            Total Time: {{ recipe.time_in_min}} minutes<br>
-            Course(s): 
-            {% if recipe.courses|length > 1 %}
-                {% for course in recipe.courses[:-1] %}
-                    {{ course.course_name }},
-                {% endfor %}
-            {% endif %}
-            {{ recipe.courses[-1].course_name }}<br>
-            <form action='/show_conversion.json' id="conversion">
-                <input type="hidden" name="recipe_id" id="recipe_id" value="{{ recipe.recipe_id }}">
-                Serving Size:
-                <select name="serving" id="serving">
-                    {% for number in serving_range %}
-                        {% if number != recipe.servings[0].serving_size %}
-                            <label><option id="serving-opt{{ number }}">{{ number }}</option></label>
-                        {% else %}
-                            <label><option id="serving-opt{{ recipe.servings[0].serving_size }}" selected>
-                                {{ recipe.servings[0].serving_size }}
-                            </option></label>                            
-                        {% endif %}
+            <div class="add-spacing">
+                Source: <a href="{{ recipe.src_url }}" target="_blank">{{ recipe.websites.site_name }}</a><br>
+                Total Time: {{ recipe.time_in_min}} minutes<br>
+                Course(s): 
+                {% if recipe.courses|length > 1 %}
+                    {% for course in recipe.courses[:-1] %}
+                        {{ course.course_name }},
                     {% endfor %}
-                </select>
-                <label><input class="btn btn-default" type="submit" value="Convert" id="convert"></label>
-            </form>
-            <br><br><br>
-            Ingredients:<br><br>
-            <table class="table" id="ingredients">
-                {% for i in range(recipe.recipesingredients | length) %}
-                    {% set ingredients = recipe.recipesingredients %}
-                <tr>
-                    <td id="us{{i}}">
-                        {% if ingredients[i].usamounts %}
-                            {% for amount in ingredients[i].usamounts[:-1] %}
-                                {{ amount.us_amount }}-
-                            {% endfor %}
-                            {{ ingredients[i].usamounts[-1].us_amount}}
-                        {% endif %}
-                        {% if ingredients[i].usunits %}
-                            {{ ingredients[i].usunits[0].us_unit }}
-                        {% endif %}                            
-                    </td>                    
-                    <td id="met{{i}}">
-                        {% if ingredients[i].metricamounts %}
-                            ({% for amount in ingredients[i].metricamounts[:-1] %}
-                                {{ amount.metric_amount }}-
-                            {% endfor %}
-                            {{ ingredients[i].metricamounts[-1].metric_amount }}
-                            {{ ingredients[i].metricunits[0].metric_unit }})
-                        {% endif %}
-                    </td>
-                    <td id="inglink{{i}}">
-                        {% if ingredients[i].link %}
-                            <a href="{{ ingredients[i].link }}" target="_blank">{{ ingredients[i].original_string }}</a>
-                        {% else %}
-                            {{ ingredients[i].original_string }}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
+                {% endif %}
+                {{ recipe.courses[-1].course_name }}
+            </div>
         </div>
     </div>
-    <br><br>
-    <div class="row">
-        <div class="col-xs-12 col-md-8 col-md-offset-2">
-            Instructions:<br><br>
-            <table class="table" id="instructions">
-                {% for instruction in recipe.instructions %}
-                    <tr>
-                        <td>{{ instruction.step_order}}</td>
-                        <td>{{ instruction.step_instruction}}</td>
-                    </tr>
+    <div class="row rec-div thumbnail">
+        <h3>Ingredients:</h3>
+        <form action='/show_conversion.json' id="conversion">
+            <input type="hidden" name="recipe_id" id="recipe_id" value="{{ recipe.recipe_id }}">
+            Serving Size:
+            <select name="serving" id="serving">
+                {% for number in serving_range %}
+                    {% if number != recipe.servings[0].serving_size %}
+                        <label><option id="serving-opt{{ number }}">{{ number }}</option></label>
+                    {% else %}
+                        <label><option id="serving-opt{{ recipe.servings[0].serving_size }}" selected>
+                            {{ recipe.servings[0].serving_size }}
+                        </option></label>                            
+                    {% endif %}
                 {% endfor %}
-            </table>
-        </div>
+            </select>
+            <label><input class="btn btn-default" type="submit" value="Convert" id="convert"></label>
+        </form>
+        <table class="table table-responsive" id="ing-table">
+            {% for i in range(recipe.recipesingredients | length) %}
+                {% set ingredients = recipe.recipesingredients %}
+            <tr>
+                <td id="us{{i}}">
+                    {% if ingredients[i].usamounts %}
+                        {% for amount in ingredients[i].usamounts[:-1] %}
+                            {{ amount.us_amount }}-
+                        {% endfor %}
+                        {{ ingredients[i].usamounts[-1].us_amount}}
+                    {% endif %}
+                    {% if ingredients[i].usunits %}
+                        {{ ingredients[i].usunits[0].us_unit }}
+                    {% endif %}                            
+                </td>                    
+                <td id="met{{i}}">
+                    {% if ingredients[i].metricamounts %}
+                        ({% for amount in ingredients[i].metricamounts[:-1] %}
+                            {{ amount.metric_amount }}-
+                        {% endfor %}
+                        {{ ingredients[i].metricamounts[-1].metric_amount }}
+                        {{ ingredients[i].metricunits[0].metric_unit }})
+                    {% endif %}
+                </td>
+                <td id="inglink{{i}}">
+                    {% if ingredients[i].link %}
+                        <a href="{{ ingredients[i].link }}" target="_blank">{{ ingredients[i].original_string }}</a>
+                    {% else %}
+                        {{ ingredients[i].original_string }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="row rec-div thumbnail instruct-div">
+        <h3>Instructions:</h3>
+        <table class="table table-responsive" id="instruct-table">
+            {% for instruction in recipe.instructions %}
+                <tr>
+                    <td>{{ instruction.step_order}}</td>
+                    <td>{{ instruction.step_instruction}}</td>
+                </tr>
+            {% endfor %}
+        </table>
     </div>
     <br><br><br><br>
-    <div class="row">
-        <div class="col-xs-6 col-xs-push-3 col-md-4 col-md-push-4">
-            <center><a href="/"><img src="/static/img/Vegan_clipart.png" alt="Home" class="img-responsive img-circle" width="200"></a></center>
-        </div>
-    </div>
 </div>
-<script>
-    function replaceNumbers(results) {
-        var newResults = JSON.parse(results);
 
-        for (var i=0; i<newResults.length; i++) {
-            var usAmount = newResults[i].us_amount;
-            var metAmount = newResults[i].metric_amount;
-            var ingredient = newResults[i].ingredient;
-            var extlink = newResults[i].extlink;
-
-            $('#us'+i).html(usAmount)
-            $('#met'+i).html(metAmount)
-            if (newResults[i].extlink) {
-                $('#inglink'+i).html('<a href="' + extlink + '" target="_blank">' + ingredient + '</a>')
-            } else {
-                $('#inglink'+i).html(ingredient)
-            }
-        }
-    }
-
-    function convert(evt) {
-        evt.preventDefault();
-        var info = {
-            "serving": $('#serving').val(),
-            "recipe_id": $('#recipe_id').val()
-        };
-        $.get('/show_conversion.json', info, replaceNumbers);
-    }
-
-    $('#conversion').on('submit', convert);
-</script>
+<script src="/static/js/recipe.js"></script>
 
 {% endblock %}

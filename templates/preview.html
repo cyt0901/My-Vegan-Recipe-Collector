@@ -1,16 +1,22 @@
-<form action="/update_my_recipes" id="editForm">
-    {% for box in boxes %}
-        <h5>{{ box.label_name }}</h5>
-        <input class="to-toggle box-label" type="text" name="box-label" id="box-label" data-box="{{ box.box_id }}" placeholder="Change Label Name" hidden><p class="clickable to-toggle" id="save-label" hidden>Update</p>
-        {% for i in range(box.recipesboxes|length) %}
-            <a class="indent1" href="/recipe/{{ box.recipesboxes[i].recipes.recipe_id }}">{{ box.recipesboxes[i].recipes.recipe_name }}</a>&nbsp<span class="removeIcon to-toggle" hidden><span class="glyphicon glyphicon-remove" data-recipe="{{ box.recipesboxes[i].recipes.recipe_id }}" data-box="{{ box.box_id }}"></span></span><br>
-            <h6 class="indent1">My Notes:</h6>
-            <p class="indent2 current-notes">{{ box.recipesboxes[i].recipe_notes }}</p>
-            <span class="clickable edit-notes indent2" hidden>Add/Update Notes</span>
-            &nbsp&nbsp&nbsp<textarea class="note-section" id="notes" name="notes" placeholder="Max Length 500" maxlength="600" rows="10" cols="40" data-recipe="{{ box.recipesboxes[i].recipes.recipe_id }}" data-box="{{ box.box_id }}" hidden>{{ box.recipesboxes[i].recipe_notes }}</textarea>
-            <p class="clickable indent-r save-notes" hidden>Save Changes</p>
-            <br><br>
-        {% endfor %}
+<form action="/update_my_recipes" id="editForm" method="POST">
+    {% for box in boxes|sort(attribute='label_name') %}
+        <div class="row">
+            <br><br><h4 class="recbox-name">{{ box.label_name }}</h4><br>&nbsp&nbsp
+            <input class="to-toggle box-label" type="text" name="box-label" id="box-label" data-box="{{ box.box_id }}" placeholder="Change Label Name" hidden>&nbsp&nbsp<span class="clickable to-toggle" id="save-label" hidden>Update</span>
+            {% for recbox in box.recipesboxes %}
+                <div class="recbox-div add-bg img-rounded">
+                    <a class="indent1" href="/recipe/{{ recbox.recipes.recipe_id }}">{{ recbox.recipes.recipe_name }}</a>&nbsp<span class="removeIcon to-toggle" hidden><span class="glyphicon glyphicon-remove" data-recipe="{{ recbox.recipes.recipe_id }}" data-box="{{ box.box_id }}"></span></span><br>
+                    <div class="profile-rec-notes">
+                        <h4 class="indent2 notes-title">My Notes:</h4>
+                        <p class="indent2 current-notes">{{ recbox.recipe_notes }}</p>
+                        &nbsp&nbsp&nbsp<span class="clickable edit-notes indent2" hidden>Add/Update Notes</span>
+                        <br><textarea class="note-section" id="notes" name="notes" placeholder="Max Length 500" maxlength="600" rows="6" cols="100" data-recipe="{{ recbox.recipes.recipe_id }}" data-box="{{ box.box_id }}" hidden>  {{ recbox.recipe_notes }}</textarea>
+                        <span class="clickable indent-r save-notes" hidden>Save Changes</span>
+                    </div>
+                    <br><br>
+                </div>
+            {% endfor %}
+        </div>
     {% endfor %}
 </form>
 
