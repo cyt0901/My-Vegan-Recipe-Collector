@@ -35,6 +35,7 @@ First, the user does not have to filter the search results to accommodate for on
 * [d3](https://d3js.org/)
 * [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/)
 * [Spoonacular API](https://spoonacular.com/food-api)
+
 #### Additional Resources
 [![Minimalist Baker](/static/img/minimalist-baker.png)](http://minimalistbaker.com/)
 
@@ -68,7 +69,7 @@ The most interesting part about this section was figuring out how to meet the "a
 
 Once the matching recipes are found, the recipe objects are passed to Jinja2, and a new template is rendered, displaying the results.
 
-![Search Results](/static/img/screenshot-results.png)
+![Search Results](/static/img/screenshot-search-results.png)
 
 ## <a name="recipe"></a>Recipe Details
 Next, the recipe details page contains data about the recipe.
@@ -97,12 +98,12 @@ Using Flask sessions and PostgreSQL database queries, the user's registration or
 #### Login
 ![Login](/static/img/screenshot-login.png)
 
-###### Updating Username and Password
+##### Updating Username and Password
 A user can change the username and/or password through the profile page.
 
 ![Update Login](/static/img/screenshot-update-login.png)
 
-###### Upload Profile Image
+##### Upload Profile Image
 A user may upload a profile picture to the profile page. The image name is saved to the users table in the database and is then saved to an uploads folder on the server. If an image is already associated with the user, meaning the user is changing the profile picture, not only is the new image added to the database and the uploads folder, but the old image is removed from the uploads folder.
 
 ![Upload Profile Image](/static/img/screenshot-upload-profile.png)
