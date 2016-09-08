@@ -3,23 +3,25 @@
 {% block content %}
 
 <div class="my-contents">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-xs-12">
-                <h1>Login</h1>
-                <p><a href="/register">or create a new account</a></p>
+    <center>
+        <div class="container-fluid thumbnail login-div">
+            <div class="row">
+                <div class="col-xs-12">
+                    <h1>Login</h1>
+                    <p><a href="/register">or create a new account</a></p>
+                </div>
+            </div>
+            <div class="row forms">
+                <div class="col-xs-12">
+                    <form action="/login" id="login-form" method="POST">
+                        <label> Username <br><input type="text" id="username" name="username" placeholder="Enter username" value="Ada" required></label><br><br>
+                        <label> Password <br><input type="password" name="password" placeholder="Enter password" value="12345" required></label><br><br>
+                        <label><input class="btn btn-primary" type="submit" value="Login"></label>
+                    </form>
+                </div>
             </div>
         </div>
-        <div class="row forms">
-            <div class="col-xs-12">
-                <form action="/login" id="login-form" method="POST">
-                    <label> Username <br><input type="text" id="username" name="username" placeholder="Enter username" value="Ada" required></label><br><br>
-                    <label> Password <br><input type="password" name="password" placeholder="Enter password" value="12345" required></label><br><br>
-                    <label><input class="btn btn-primary" type="submit" value="Login"></label>
-                </form>
-            </div>
-        </div>
-    </div>
+    </center>
 </div>
 
 {% endblock %}

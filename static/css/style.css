@@ -44,6 +44,18 @@ a.footer-links {
     background: rgba(255, 255, 255, 0.7);
 }
 
+.login-div,
+.register-div {
+    margin-top: 20px;
+    margin-left: 90px;
+    display: inline-block;
+}
+
+.login-div>div,
+.register-div>div {
+    padding: 0 40px 0 40px;
+}
+
 .rec-div {
     margin: 30px;
 }

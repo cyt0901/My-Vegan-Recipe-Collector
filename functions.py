@@ -116,6 +116,7 @@ def get_my_recipes_data(boxes):
             each_recipe = dict(zip(["name", "parent", "value", "img", "url"], [recipe.recipe_name, box.label_name, 3.5, recipe.img_url, "/recipe/" + str(recipe.recipe_id)]))
             data.append(each_recipe)
 
+    print data
     return data
 
 

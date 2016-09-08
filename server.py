@@ -252,6 +252,7 @@ def show_recipe_box():
     return render_template("my_recipes.html")
 
 
+
 @app.route('/settings', methods=["POST"])
 def update_settings():
     """Update database with new values from user."""
@@ -355,11 +356,11 @@ def allowed_file(filename):
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the
     # point that we invoke the DebugToolbarExtension
-    app.debug = True
+    app.debug = False
 
     connect_to_db(app)
 
     # Use the DebugToolbar
-    DebugToolbarExtension(app)
+    # DebugToolbarExtension(app)
 
     app.run()
